@@ -1,0 +1,111 @@
+version: "3.9"
+
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: smartgov_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: smartgov
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ───────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: smartgov_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Meilisearch ─────────────────────────────────────────────────────────────
+  meilisearch:
+    image: getmeili/meilisearch:v1.11
+    container_name: smartgov_meilisearch
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: masterKey
+      MEILI_ENV: development
+    ports:
+      - "7700:7700"
+    volumes:
+      - meilisearch_data:/meili_data
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── FastAPI Backend ──────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartgov_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:password@postgres:5432/smartgov
+      SYNC_DATABASE_URL: postgresql://postgres:password@postgres:5432/smartgov
+      REDIS_URL: redis://redis:6379/0
+      MEILISEARCH_URL: http://meilisearch:7700
+      MEILISEARCH_KEY: masterKey
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      DEBUG: "false"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+
+  # ── Scheduler (scraper daemon) ──────────────────────────────────────────────
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartgov_scheduler
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:password@postgres:5432/smartgov
+      SYNC_DATABASE_URL: postgresql://postgres:password@postgres:5432/smartgov
+      REDIS_URL: redis://redis:6379/0
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      SCRAPER_RPS: "0.5"
+      SCRAPER_CONCURRENCY: "2"
+    volumes:
+      - ./:/app
+      - playwright_cache:/root/.cache/ms-playwright
+    command: python -m scheduler.daemon
+
+volumes:
+  postgres_data:
+  redis_data:
+  meilisearch_data:
+  playwright_cache:

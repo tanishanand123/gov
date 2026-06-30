@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartGov Assist — Every Scheme You Deserve</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ── Landing-specific ── */
+    .navbar {
+      position: sticky; top: 0; z-index: 50; height: 72px;
+      display: flex; align-items: center; padding: 0 60px;
+      background: rgba(255,255,255,0.85); backdrop-filter: blur(12px);
+      border-bottom: 1px solid transparent; transition: border-color 0.2s;
+    }
+    [data-theme="dark"] .navbar { background: rgba(11,17,32,0.85); }
+    .navbar.scrolled { border-bottom-color: var(--border); }
+    .nav-logo { font-size: 22px; font-weight: 800; margin-right: 48px; }
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a { font-size: 14px; font-weight: 500; color: var(--text-secondary); text-decoration: none; transition: color 0.15s; }
+    .nav-links a:hover { color: var(--primary); }
+    .nav-cta { display: flex; gap: 10px; margin-left: auto; }
+
+    .hero {
+      min-height: calc(100vh - 72px);
+      background: linear-gradient(160deg, #EEF2FF 0%, #F0FDFA 50%, #F8FAFC 100%);
+      display: flex; align-items: center; padding: 80px 60px;
+      position: relative; overflow: hidden;
+    }
+    [data-theme="dark"] .hero { background: linear-gradient(160deg, #0B1120 0%, #0F1729 50%, #0B1120 100%); }
+    .hero-content { flex: 1; max-width: 580px; position: relative; z-index: 1; }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #FEF9C3; color: #CA8A04; border-radius: 50px;
+      padding: 6px 16px; font-size: 13px; font-weight: 600; margin-bottom: 24px;
+    }
+    [data-theme="dark"] .hero-tag { background: #422006; color: #FDE047; }
+    .hero h1 { font-size: 56px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 20px; }
+    .hero-sub { font-size: 20px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 32px; max-width: 480px; }
+    .hero-cta-row { display: flex; gap: 12px; margin-bottom: 24px; }
+    .hero-trust { font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+    .hero-visual { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; }
+    .phone-mockup {
+      width: 260px; background: var(--bg-card); border-radius: 36px;
+      border: 8px solid #E2E8F0; box-shadow: 0 40px 80px rgba(79,70,229,0.2);
+      overflow: hidden; padding: 16px;
+    }
+    [data-theme="dark"] .phone-mockup { border-color: #334155; }
+    .phone-screen { border-radius: 24px; overflow: hidden; }
+    .phone-topbar { background: var(--primary-gradient); padding: 14px 12px; color: #fff; font-size: 11px; font-weight: 600; }
+    .phone-body { padding: 10px 0; }
+    .phone-stat-row { display: flex; gap: 6px; padding: 4px 0; }
+    .phone-stat { flex: 1; background: var(--surface-elevated); border-radius: 8px; padding: 8px; text-align: center; }
+    .phone-stat-val { font-size: 16px; font-weight: 700; }
+    .phone-stat-lbl { font-size: 8px; color: var(--text-muted); }
+    .phone-scheme { background: var(--surface-elevated); border-radius: 8px; padding: 8px 10px; margin-top: 6px; border-left: 3px solid #10B981; }
+    .phone-scheme-name { font-size: 9px; font-weight: 600; }
+    .phone-scheme-amt { font-size: 10px; color: #10B981; font-weight: 700; }
+    .hero-glow {
+      position: absolute; width: 400px; height: 400px; border-radius: 50%;
+      background: rgba(99,102,241,0.3); filter: blur(80px);
+      top: -100px; left: -100px; pointer-events: none;
+    }
+
+    .stats-bar {
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      padding: 32px 60px; display: grid; grid-template-columns: repeat(4, 1fr);
+    }
+    .stat-bar-item { text-align: center; }
+    .stat-bar-val { font-size: 32px; font-weight: 700; }
+    .stat-bar-lbl { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+
+    .section { padding: 80px 60px; }
+    .section-center { text-align: center; }
+    .section-center h2 { font-size: 32px; font-weight: 700; margin-bottom: 12px; }
+    .section-center p { font-size: 16px; color: var(--text-secondary); max-width: 560px; margin: 0 auto; }
+
+    .features-bg { background: var(--bg-primary); }
+    [data-theme="dark"] .features-bg { background: #0B1120; }
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 48px; }
+
+    .how-bg { background: linear-gradient(180deg, var(--bg-primary) 0%, #EEF2FF 100%); }
+    [data-theme="dark"] .how-bg { background: linear-gradient(180deg, #0B1120 0%, #0F1729 100%); }
+    .how-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 48px; position: relative; }
+    .how-connector {
+      position: absolute; top: 24px; left: calc(33% - 40px); right: calc(33% - 40px);
+      height: 2px; background: linear-gradient(to right, #6366F1, #06B6D4); display: none;
+    }
+
+    .cta-section {
+      margin: 0 60px 80px; background: linear-gradient(135deg, #4F46E5 0%, #06B6D4 100%);
+      border-radius: 24px 24px 0 0; padding: 64px; text-align: center; color: #fff;
+    }
+    .cta-section h2 { font-size: 32px; font-weight: 700; margin-bottom: 12px; }
+    .cta-section p { opacity: 0.85; font-size: 16px; margin-bottom: 32px; }
+    .cta-btn { background: #fff; color: #4F46E5; font-weight: 700; padding: 14px 36px; border-radius: 12px; border: none; font-size: 16px; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+    .cta-btn:hover { transform: scale(1.03); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+
+    .footer { background: #111827; color: #94A3B8; padding: 48px 60px 32px; }
+    .footer-top { display: flex; gap: 60px; margin-bottom: 40px; }
+    .footer-brand { flex: 1.5; }
+    .footer-brand-name { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 10px; }
+    .footer-brand p { font-size: 14px; line-height: 1.7; max-width: 300px; }
+    .footer-col h4 { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 14px; letter-spacing: 0.05em; text-transform: uppercase; }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .footer-col ul li a { font-size: 14px; color: #94A3B8; text-decoration: none; transition: color 0.15s; }
+    .footer-col ul li a:hover { color: #fff; }
+    .footer-bottom { border-top: 1px solid #1E293B; padding-top: 24px; display: flex; align-items: center; justify-content: space-between; }
+    .footer-bottom p { font-size: 13px; }
+    .footer-socials { display: flex; gap: 12px; }
+    .social-btn { width: 36px; height: 36px; border-radius: 8px; background: #1E293B; display: flex; align-items: center; justify-content: center; color: #94A3B8; text-decoration: none; transition: all 0.15s; font-size: 14px; }
+    .social-btn:hover { background: #334155; color: #fff; }
+
+    .theme-toggle {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--surface-elevated); border: 1px solid var(--border);
+      border-radius: 50px; padding: 5px 14px; cursor: pointer;
+      font-size: 13px; font-weight: 500; color: var(--text-secondary);
+      transition: all 0.15s;
+    }
+    .theme-toggle:hover { border-color: #6366F1; color: #4F46E5; }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar" id="navbar">
+  <a href="index.html" class="nav-logo gradient-text-cyan">SmartGov</a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how">How it Works</a>
+    <a href="#schemes">Schemes</a>
+    <a href="#languages">Languages</a>
+  </div>
+  <div class="nav-cta">
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️ Light</button>
+    <a href="auth.html#login" class="btn btn-outline">Login</a>
+    <a href="auth.html#register" class="btn btn-primary btn-pill">Get Started</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="orb" style="width:500px;height:500px;background:rgba(99,102,241,0.2);top:-150px;left:-150px;"></div>
+  <div class="orb" style="width:400px;height:400px;background:rgba(6,182,212,0.15);bottom:-100px;right:80px;"></div>
+
+  <div class="hero-content">
+    <div class="hero-tag">🇮🇳 Built for Bharat</div>
+    <h1>
+      <span class="gradient-text-cyan">Every Scheme</span><br>
+      <span class="gradient-text-cyan">You Deserve.</span><br>
+      <span style="color:var(--text-primary);">Effortlessly.</span>
+    </h1>
+    <p class="hero-sub">One profile. One vault. Auto-apply to 500+ government welfare schemes.</p>
+    <div class="hero-cta-row">
+      <a href="auth.html#register" class="btn btn-primary btn-pill btn-lg">Get Started Free</a>
+      <button class="btn btn-outline btn-pill btn-lg" onclick="showDemo()">▶ Watch Demo</button>
+    </div>
+    <div class="hero-trust">
+      ⭐⭐⭐⭐⭐ &nbsp;Trusted by <strong>10,000+ citizens</strong> across India
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <div class="phone-mockup">
+      <div class="phone-screen">
+        <div class="phone-topbar">
+          🏛 SmartGov Assist &nbsp;•&nbsp; Dashboard
+        </div>
+        <div class="phone-body">
+          <div class="phone-stat-row">
+            <div class="phone-stat">
+              <div class="phone-stat-val gradient-text">12</div>
+              <div class="phone-stat-lbl">Schemes</div>
+            </div>
+            <div class="phone-stat">
+              <div class="phone-stat-val" style="color:#10B981">4/7</div>
+              <div class="phone-stat-lbl">Documents</div>
+            </div>
+            <div class="phone-stat">
+              <div class="phone-stat-val" style="color:#F59E0B">2</div>
+              <div class="phone-stat-lbl">Applied</div>
+            </div>
+          </div>
+          <div class="phone-scheme">
+            <div class="phone-scheme-name">PM Scholarship Scheme</div>
+            <div class="phone-scheme-amt">₹25,000/year • 92% match ✓</div>
+          </div>
+          <div class="phone-scheme" style="border-color:#6366F1;margin-top:5px;">
+            <div class="phone-scheme-name">PM Awas Yojana</div>
+            <div class="phone-scheme-amt" style="color:#6366F1">Housing subsidy • 85% match ✓</div>
+          </div>
+          <div class="phone-scheme" style="border-color:#F59E0B;margin-top:5px;">
+            <div class="phone-scheme-name">Ayushman Bharat</div>
+            <div class="phone-scheme-amt" style="color:#F59E0B">₹5L health cover • 78% match</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-glow"></div>
+  </div>
+</section>
+
+<!-- Stats Bar -->
+<div class="stats-bar">
+  <div class="stat-bar-item">
+    <div class="stat-bar-val gradient-text-cyan">500+</div>
+    <div class="stat-bar-lbl">Schemes Covered</div>
+  </div>
+  <div class="stat-bar-item">
+    <div class="stat-bar-val gradient-text-cyan">10K+</div>
+    <div class="stat-bar-lbl">Registered Users</div>
+  </div>
+  <div class="stat-bar-item">
+    <div class="stat-bar-val gradient-text-cyan">70%</div>
+    <div class="stat-bar-lbl">Auto-Fill Rate</div>
+  </div>
+  <div class="stat-bar-item">
+    <div class="stat-bar-val gradient-text-cyan">5 min</div>
+    <div class="stat-bar-lbl">Avg Apply Time</div>
+  </div>
+</div>
+
+<!-- Features -->
+<section class="section features-bg" id="features">
+  <div class="section-center">
+    <h2>Everything you need to <span class="gradient-text">claim your benefits</span></h2>
+    <p>From eligibility check to form submission — we handle every step so you don't have to.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon" style="background:linear-gradient(135deg,#6366F1,#4338CA);">🎯</div>
+      <h3>Eligibility Check</h3>
+      <p class="text-secondary mt-2">Auto-match your profile against 500+ schemes. Know exactly what you qualify for in seconds.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:linear-gradient(135deg,#06B6D4,#0891B2);">🗂</div>
+      <h3>Document Vault</h3>
+      <p class="text-secondary mt-2">Upload once. We extract data via OCR and reuse across all applications — securely encrypted.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:linear-gradient(135deg,#F59E0B,#D97706);">⚡</div>
+      <h3>Auto Form Fill</h3>
+      <p class="text-secondary mt-2">Your profile data auto-populates government forms. Apply in one click, no manual entry.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:linear-gradient(135deg,#10B981,#059669);">🔔</div>
+      <h3>Smart Notifications</h3>
+      <p class="text-secondary mt-2">Never miss a deadline. Get alerts for new schemes, expiring docs, and application updates.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:linear-gradient(135deg,#EC4899,#DB2777);">🌐</div>
+      <h3>Multi-language</h3>
+      <p class="text-secondary mt-2">Available in Hindi, English, Tamil, Telugu, Bengali, and 6 more Indian languages.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);">🔗</div>
+      <h3>Direct Gov Links</h3>
+      <p class="text-secondary mt-2">Apply directly on official government portals. We only guide and fill — never intercept data.</p>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="section how-bg" id="how">
+  <div class="section-center">
+    <h2>How it <span class="gradient-text">Works</span></h2>
+    <p>Three steps to unlock every government benefit you're entitled to.</p>
+  </div>
+  <div class="how-steps">
+    <div class="how-step">
+      <div class="how-step-num">1</div>
+      <h3>Create Your Profile</h3>
+      <p class="text-secondary mt-2">Fill your basic info, income, location, and category in under 2 minutes. One-time setup.</p>
+    </div>
+    <div class="how-step">
+      <div class="how-step-num">2</div>
+      <h3>Upload Documents Once</h3>
+      <p class="text-secondary mt-2">Upload Aadhaar, income certificate, and other docs. Our OCR extracts and stores them securely.</p>
+    </div>
+    <div class="how-step">
+      <div class="how-step-num">3</div>
+      <h3>Apply with One Click</h3>
+      <p class="text-secondary mt-2">Auto-filled forms. One-click submission. Track status in real time from your dashboard.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-section">
+  <h2>Start claiming what's yours today</h2>
+  <p>Join 10,000+ citizens who've already claimed ₹2.3 Crore+ in benefits.</p>
+  <button class="cta-btn" onclick="window.location.href='auth.html#register'">Get Started Free →</button>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="footer-brand-name gradient-text-cyan">SmartGov Assist</div>
+      <p>Making government welfare accessible to every Indian citizen through technology, transparency, and trust.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <ul>
+        <li><a href="#">Features</a></li>
+        <li><a href="#">How it Works</a></li>
+        <li><a href="#">Schemes Database</a></li>
+        <li><a href="#">Languages</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Support</h4>
+      <ul>
+        <li><a href="#">Help Center</a></li>
+        <li><a href="#">Contact Us</a></li>
+        <li><a href="#">Report an Issue</a></li>
+        <li><a href="#">Grievances</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <ul>
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Terms of Service</a></li>
+        <li><a href="#">Data Security</a></li>
+        <li><a href="#">Cookie Policy</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2026 SmartGov Assist. For Indian citizens, by Indian developers. 🇮🇳</p>
+    <div class="footer-socials">
+      <a href="#" class="social-btn">𝕏</a>
+      <a href="#" class="social-btn">in</a>
+      <a href="#" class="social-btn">f</a>
+      <a href="#" class="social-btn">▶</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Navbar scroll effect
+  window.addEventListener('scroll', () => {
+    document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 10);
+  });
+
+  // Theme toggle
+  function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    document.getElementById('themeBtn').textContent = isDark ? '☀️ Light' : '🌙 Dark';
+    localStorage.setItem('theme', isDark ? 'light' : 'dark');
+  }
+
+  // Persist theme
+  const saved = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('themeBtn').textContent = saved === 'dark' ? '🌙 Dark' : '☀️ Light';
+
+  function showDemo() {
+    alert('Demo video coming soon! 🎬');
+  }
+</script>
+</body>
+</html>

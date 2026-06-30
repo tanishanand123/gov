@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartGov Assist — Sign In / Register</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .auth-nav {
+      position: absolute; top: 0; left: 0; right: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 40px; z-index: 10;
+    }
+    .auth-logo { font-size: 20px; font-weight: 800; text-decoration: none; }
+    .back-link { font-size: 14px; color: var(--text-muted); text-decoration: none; display: flex; align-items: center; gap: 4px; }
+    .back-link:hover { color: var(--primary); }
+    .auth-tabs { display: flex; background: var(--surface-elevated); border-radius: 12px; padding: 4px; margin-bottom: 24px; }
+    .auth-tab {
+      flex: 1; padding: 10px; border-radius: 9px; border: none;
+      font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: inherit;
+      color: var(--text-muted); background: transparent;
+    }
+    .auth-tab.active { background: var(--bg-secondary); color: #4F46E5; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .social-btn-full {
+      width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 12px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--bg-secondary); color: var(--text-primary); font-size: 14px; font-weight: 500;
+      cursor: pointer; font-family: inherit; transition: all 0.15s;
+    }
+    .social-btn-full:hover { border-color: #6366F1; background: #EEF2FF; }
+    [data-theme="dark"] .social-btn-full:hover { background: #1E1B4B; }
+    .divider-text { display: flex; align-items: center; gap: 12px; color: var(--text-muted); font-size: 13px; margin: 16px 0; }
+    .divider-text::before, .divider-text::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .checkbox-row { display: flex; align-items: flex-start; gap: 10px; }
+    .checkbox-custom { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--border); flex-shrink: 0; margin-top: 1px; appearance: none; cursor: pointer; transition: all 0.15s; }
+    .checkbox-custom:checked { background: var(--primary-gradient); border-color: transparent; }
+    .forgot-row { display: flex; align-items: center; justify-content: space-between; }
+
+    /* OTP Modal */
+    .otp-modal { max-width: 400px; }
+    .otp-modal h3 { font-size: 20px; font-weight: 600; text-align: center; margin-bottom: 8px; }
+    .otp-modal .sub { font-size: 14px; color: var(--text-muted); text-align: center; margin-bottom: 24px; }
+    .countdown { font-size: 13px; color: var(--text-muted); text-align: center; margin-top: 12px; }
+    .countdown span { color: #6366F1; font-weight: 600; }
+
+    /* Auth panel */
+    .auth-screen { display: none; }
+    .auth-screen.active { display: block; }
+  </style>
+</head>
+<body>
+<div class="auth-bg" id="authBg">
+  <!-- Orbs -->
+  <div class="orb" style="width:400px;height:400px;background:rgba(99,102,241,0.15);top:-100px;left:-100px;"></div>
+  <div class="orb" style="width:300px;height:300px;background:rgba(6,182,212,0.1);bottom:-80px;right:-80px;"></div>
+
+  <!-- Nav -->
+  <div class="auth-nav">
+    <a href="index.html" class="auth-logo gradient-text-cyan">SmartGov</a>
+    <a href="index.html" class="back-link">← Back to Home</a>
+  </div>
+
+  <!-- Auth Card -->
+  <div class="auth-card">
+    <!-- Logo -->
+    <div class="text-center mb-6" style="margin-bottom:20px;">
+      <div style="font-size:28px;font-weight:900;" class="gradient-text-cyan">SmartGov</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Assist • Govt Welfare Platform</div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabRegister" onclick="showTab('register')">Create Account</button>
+      <button class="auth-tab" id="tabLogin" onclick="showTab('login')">Sign In</button>
+    </div>
+
+    <!-- ── REGISTER ── -->
+    <div class="auth-screen active" id="screenRegister">
+      <div style="font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:20px;">
+        Join 10,000+ citizens claiming their benefits
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="input-wrap">
+          <label class="input-label">Full Name</label>
+          <div class="input-icon-wrap">
+            <span class="icon-left">👤</span>
+            <input class="input" type="text" placeholder="Rahul Kumar" />
+          </div>
+        </div>
+        <div class="input-wrap">
+          <label class="input-label">Mobile Number</label>
+          <div class="input-icon-wrap">
+            <span class="icon-left">🇮🇳 +91</span>
+            <input class="input" type="tel" placeholder="9876543210" style="padding-left:70px;" />
+          </div>
+        </div>
+        <div class="input-wrap">
+          <label class="input-label">Email Address</label>
+          <div class="input-icon-wrap">
+            <span class="icon-left">✉️</span>
+            <input class="input" type="email" placeholder="rahul@example.com" />
+          </div>
+        </div>
+        <div class="input-wrap">
+          <label class="input-label">Password</label>
+          <div class="input-icon-wrap">
+            <span class="icon-left">🔒</span>
+            <input class="input" type="password" id="pwInput" placeholder="Create a strong password" oninput="updatePwStrength(this.value)" />
+            <span class="icon-right" onclick="togglePw('pwInput', this)">👁</span>
+          </div>
+          <div class="pw-strength">
+            <div class="pw-segment" id="ps1"></div>
+            <div class="pw-segment" id="ps2"></div>
+            <div class="pw-segment" id="ps3"></div>
+            <div class="pw-segment" id="ps4"></div>
+          </div>
+          <div id="pwLabel" style="font-size:12px;color:var(--text-muted);margin-top:4px;"></div>
+        </div>
+        <div class="input-wrap">
+          <label class="input-label">Confirm Password</label>
+          <div class="input-icon-wrap">
+            <span class="icon-left">🔒</span>
+            <input class="input" type="password" placeholder="Repeat your password" />
+          </div>
+        </div>
+
+        <div class="checkbox-row">
+          <input type="checkbox" class="checkbox-custom" id="termsCheck" />
+          <label for="termsCheck" style="font-size:13px;color:var(--text-secondary);">
+            I agree to the <a href="#" class="link">Terms of Service</a> and <a href="#" class="link">Privacy Policy</a>
+          </label>
+        </div>
+
+        <button class="btn btn-primary btn-full" style="height:48px;margin-top:4px;" onclick="showOTP()">
+          Create Account →
+        </button>
+      </div>
+
+      <div class="divider-text">or sign up with</div>
+      <button class="social-btn-full">
+        <span style="font-size:18px;">G</span> Continue with Google
+      </button>
+
+      <div style="text-align:center;margin-top:20px;font-size:14px;color:var(--text-muted);">
+        Already have an account? <a href="#" class="link" onclick="showTab('login')">Sign In</a>
+      </div>
+    </div>
+
+    <!-- ── LOGIN ── -->
+    <div class="auth-screen" id="screenLogin">
+      <div style="font-size:22px;font-weight:700;text-align:center;margin-bottom:6px;">Welcome back</div>
+      <div style="font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:24px;">Sign in to your SmartGov account</div>
+
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="input-wrap">
+          <label class="input-label">Mobile / Email</label>
+          <div class="input-icon-wrap">
+            <span class="icon-left">📱</span>
+            <input class="input" type="text" placeholder="Mobile number or email" />
+          </div>
+        </div>
+        <div class="input-wrap">
+          <div class="forgot-row">
+            <label class="input-label">Password</label>
+            <a href="#" class="link" style="font-size:12px;">Forgot Password?</a>
+          </div>
+          <div class="input-icon-wrap">
+            <span class="icon-left">🔒</span>
+            <input class="input" type="password" id="loginPw" placeholder="Enter your password" />
+            <span class="icon-right" onclick="togglePw('loginPw', this)">👁</span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-full" style="height:48px;" onclick="window.location.href='onboarding.html'">
+          Sign In →
+        </button>
+      </div>
+
+      <div class="divider-text">or continue with</div>
+      <button class="social-btn-full">
+        <span style="font-size:18px;">G</span> Continue with Google
+      </button>
+
+      <div style="text-align:center;margin-top:20px;font-size:14px;color:var(--text-muted);">
+        Don't have an account? <a href="#" class="link" onclick="showTab('register')">Get Started</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Theme toggle -->
+  <div style="position:fixed;bottom:20px;right:20px;">
+    <button class="btn btn-secondary" onclick="toggleTheme()">🌙</button>
+  </div>
+</div>
+
+<!-- OTP Modal -->
+<div class="modal-overlay" id="otpModal">
+  <div class="modal otp-modal">
+    <div style="text-align:center;margin-bottom:6px;font-size:40px;">📱</div>
+    <h3>Verify your mobile</h3>
+    <div class="sub">Enter the 6-digit OTP sent to<br><strong>+91-98765-XXXXX</strong></div>
+    <div class="otp-row">
+      <input class="otp-box" maxlength="1" oninput="otpNext(this,0)" />
+      <input class="otp-box" maxlength="1" oninput="otpNext(this,1)" />
+      <input class="otp-box" maxlength="1" oninput="otpNext(this,2)" />
+      <input class="otp-box" maxlength="1" oninput="otpNext(this,3)" />
+      <input class="otp-box" maxlength="1" oninput="otpNext(this,4)" />
+      <input class="otp-box" maxlength="1" oninput="otpNext(this,5)" />
+    </div>
+    <div class="countdown">Didn't receive it? Resend in <span id="countdownTimer">0:45</span></div>
+    <button class="btn btn-primary btn-full mt-4" style="margin-top:20px;" onclick="window.location.href='onboarding.html'">
+      Verify OTP →
+    </button>
+    <button class="btn btn-outline btn-full mt-2" style="margin-top:8px;" onclick="closeOTP()">Cancel</button>
+  </div>
+</div>
+
+<script>
+  // Tab switching
+  function showTab(tab) {
+    document.getElementById('screenRegister').classList.toggle('active', tab === 'register');
+    document.getElementById('screenLogin').classList.toggle('active', tab === 'login');
+    document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
+    document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+  }
+
+  // Check URL hash
+  if (window.location.hash === '#login') showTab('login');
+
+  // Password strength
+  function updatePwStrength(val) {
+    const segments = ['ps1','ps2','ps3','ps4'];
+    const classes = ['weak','fair','strong','vstrong'];
+    const labels = ['','Weak','Fair','Strong','Very Strong'];
+    let score = 0;
+    if (val.length >= 6) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    segments.forEach((id, i) => {
+      const el = document.getElementById(id);
+      el.className = 'pw-segment' + (i < score ? ' ' + classes[i < score ? score - 1 : 0] : '');
+    });
+    document.getElementById('pwLabel').textContent = labels[score];
+    document.getElementById('pwLabel').style.color = ['','#EF4444','#F59E0B','#10B981','#6366F1'][score];
+  }
+
+  // Toggle password visibility
+  function togglePw(id, btn) {
+    const input = document.getElementById(id);
+    input.type = input.type === 'password' ? 'text' : 'password';
+    btn.textContent = input.type === 'password' ? '👁' : '🙈';
+  }
+
+  // OTP
+  function showOTP() {
+    document.getElementById('otpModal').classList.add('open');
+    startCountdown();
+  }
+  function closeOTP() {
+    document.getElementById('otpModal').classList.remove('open');
+  }
+
+  let countdownInt;
+  function startCountdown() {
+    let secs = 45;
+    clearInterval(countdownInt);
+    countdownInt = setInterval(() => {
+      secs--;
+      document.getElementById('countdownTimer').textContent = `0:${String(secs).padStart(2,'0')}`;
+      if (secs <= 0) { clearInterval(countdownInt); document.getElementById('countdownTimer').textContent = 'Resend'; }
+    }, 1000);
+  }
+
+  function otpNext(input, idx) {
+    const boxes = document.querySelectorAll('.otp-box');
+    if (input.value.length === 1 && idx < 5) boxes[idx + 1].focus();
+  }
+
+  // Theme
+  function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    localStorage.setItem('theme', isDark ? 'light' : 'dark');
+  }
+  const saved = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+</script>
+</body>
+</html>

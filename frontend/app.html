@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartGov Assist — Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ── App-specific overrides ── */
+    body { overflow: hidden; }
+    .app-shell { height: 100vh; }
+    .app-main { overflow: hidden; }
+    .page-content { height: calc(100vh - 64px); overflow-y: auto; }
+
+    /* Screen visibility */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* Section title with colored left border */
+    .section-title { border-left: 3px solid #6366F1; padding-left: 10px; font-size: 18px; font-weight: 600; }
+
+    /* Criteria row */
+    .criteria-label { flex: 1; font-size: 14px; }
+    .criteria-val { font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 6px; }
+
+    /* Doc row in scheme detail */
+    .doc-check-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); margin-bottom: 6px; }
+
+    /* Scheme detail hero */
+    .scheme-hero { background: linear-gradient(135deg, #EEF2FF 0%, #F0FDFA 100%); border-radius: 20px; padding: 32px; margin-bottom: 24px; }
+    [data-theme="dark"] .scheme-hero { background: linear-gradient(135deg, #1E1B4B 0%, #0F172A 100%); }
+
+    /* Profile card section */
+    .profile-section-card { background: var(--bg-card); border-radius: 16px; padding: 24px; border: 1px solid var(--border); margin-bottom: 16px; }
+    .profile-field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    .profile-field label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 4px; }
+    .profile-field span { font-size: 14px; }
+
+    /* Settings layout */
+    .settings-layout { display: flex; gap: 24px; }
+    .settings-content { flex: 1; }
+    .settings-panel { display: none; }
+    .settings-panel.active { display: block; }
+
+    /* Scheme category chips */
+    .category-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .cat-scholarship { background: #EEF2FF; color: #4F46E5; }
+    .cat-health { background: #D1FAE5; color: #065F46; }
+    .cat-housing { background: #FEF3C7; color: #92400E; }
+    .cat-agri { background: #ECFDF5; color: #064E3B; }
+    .cat-women { background: #FDF2F8; color: #831843; }
+
+    /* Eligibility score ring */
+    .score-ring { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #10B981, #059669); }
+
+    /* OCR table */
+    .ocr-table { width: 100%; border-collapse: collapse; }
+    .ocr-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); padding: 10px 14px; border-bottom: 1px solid var(--border); }
+    .ocr-table td { padding: 12px 14px; font-size: 14px; border-bottom: 1px solid var(--divider); }
+    .ocr-table tr:last-child td { border-bottom: none; }
+
+    /* Admin table */
+    .admin-table { width: 100%; border-collapse: collapse; }
+    .admin-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #94A3B8; padding: 14px 16px; background: #1E1B4B; }
+    .admin-table th:first-child { border-radius: 10px 0 0 10px; }
+    .admin-table th:last-child { border-radius: 0 10px 10px 0; }
+    .admin-table td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid #1E293B; }
+    .admin-table tr:last-child td { border-bottom: none; }
+
+    /* Sparkline placeholder */
+    .sparkline { height: 32px; background: linear-gradient(180deg, rgba(99,102,241,0.2) 0%, transparent 100%); border-radius: 4px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ════ SIDEBAR ════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span style="font-size:22px;">🏛</span>
+      <div>
+        <div class="sidebar-logo-text gradient-text-cyan">SmartGov</div>
+        <div style="font-size:10px;color:var(--text-muted);">Assist</div>
+      </div>
+      <div class="sidebar-version">v1.0</div>
+    </div>
+
+    <nav class="nav-section">
+      <a class="nav-item active" id="nav-dashboard" onclick="showScreen('dashboard', this)">
+        <span class="nav-icon">🏠</span> Dashboard
+      </a>
+      <a class="nav-item" id="nav-schemes" onclick="showScreen('schemes', this)">
+        <span class="nav-icon">📋</span> Eligible Schemes
+      </a>
+      <a class="nav-item" id="nav-vault" onclick="showScreen('vault', this)">
+        <span class="nav-icon">🗂</span> Document Vault
+      </a>
+      <a class="nav-item" id="nav-applications" onclick="showScreen('applications', this)">
+        <span class="nav-icon">📝</span> My Applications
+      </a>
+      <a class="nav-item" id="nav-notifications" onclick="showScreen('notifications', this)">
+        <span class="nav-icon">🔔</span> Notifications
+      </a>
+      <a class="nav-item" id="nav-profile" onclick="showScreen('profile', this)">
+        <span class="nav-icon">👤</span> My Profile
+      </a>
+      <a class="nav-item" id="nav-settings" onclick="showScreen('settings', this)">
+        <span class="nav-icon">⚙️</span> Settings
+      </a>
+    </nav>
+
+    <div class="sidebar-user">
+      <div class="sidebar-user-card">
+        <div class="avatar-circle">RK</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;">Rahul Kumar</div>
+          <div style="font-size:11px;color:#10B981;display:flex;align-items:center;gap:4px;">
+            <span style="width:6px;height:6px;border-radius:50%;background:#10B981;display:inline-block;"></span>Active
+          </div>
+        </div>
+      </div>
+      <a href="index.html" style="display:block;text-align:center;margin-top:10px;font-size:13px;color:#EF4444;text-decoration:none;font-weight:500;">Logout</a>
+    </div>
+  </aside>
+
+  <!-- ════ MAIN ════ -->
+  <div class="app-main">
+
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="btn-icon" onclick="toggleSidebar()">☰</button>
+        <span style="font-size:14px;color:var(--text-muted);" id="breadcrumb">SmartGov / Dashboard</span>
+      </div>
+      <div class="topbar-search">
+        <span>🔍</span>
+        <input type="text" placeholder="Search schemes, documents..." />
+      </div>
+      <div class="topbar-actions">
+        <button class="btn-icon" title="Language">🌐</button>
+        <button class="btn-icon notif-badge" title="Notifications" onclick="showScreen('notifications', document.getElementById('nav-notifications'))">🔔</button>
+        <button class="btn-icon" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+        <div class="avatar-circle" style="cursor:pointer;" onclick="showScreen('profile', document.getElementById('nav-profile'))">RK</div>
+      </div>
+    </header>
+
+    <!-- ════ SCREENS ════ -->
+    <main class="page-content">
+
+      <!-- ────────────────────────────────────── -->
+      <!-- SCREEN: DASHBOARD                      -->
+      <!-- ────────────────────────────────────── -->
+      <div class="screen active" id="screen-dashboard">
+        <div class="page-content" style="height:auto;overflow:visible;padding:0;">
+        <div style="padding:28px 32px;">
+
+          <!-- Welcome Banner -->
+          <div class="welcome-banner">
+            <div>
+              <div style="font-size:22px;font-weight:600;margin-bottom:6px;">Good morning, Rahul! 👋</div>
+              <div style="opacity:0.9;font-size:14px;">You have <strong>3 new eligible schemes</strong> and <strong>1 document expiring soon</strong>.</div>
+            </div>
+            <div style="font-size:80px;opacity:0.2;position:absolute;right:32px;top:10px;">🏛</div>
+          </div>
+
+          <!-- Profile Completion -->
+          <div class="card card-sm flex items-center justify-between mb-4" style="margin-bottom:20px;">
+            <div style="flex:1;">
+              <div style="font-size:15px;font-weight:600;margin-bottom:4px;">Complete your profile</div>
+              <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">72% complete — add Caste Certificate to unlock 3 more schemes</div>
+              <div class="progress-wrap"><div class="progress-bar" style="width:72%;"></div></div>
+            </div>
+            <button class="btn btn-outline btn-sm" style="margin-left:20px;white-space:nowrap;">Complete Now →</button>
+          </div>
+
+          <!-- Stats Row -->
+          <div class="stats-grid mb-6" style="margin-bottom:24px;">
+            <div class="stat-card">
+              <div class="stat-icon" style="background:linear-gradient(135deg,#6366F1,#4338CA);">🎯</div>
+              <div class="stat-value gradient-text">12</div>
+              <div class="stat-label">Eligible Schemes</div>
+              <div class="stat-delta" style="color:#10B981;">+3 new this week</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:linear-gradient(135deg,#06B6D4,#0891B2);">📄</div>
+              <div class="stat-value" style="color:#06B6D4;">4/7</div>
+              <div class="stat-label">Documents Uploaded</div>
+              <div class="stat-delta" style="color:#F59E0B;">3 missing</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:linear-gradient(135deg,#10B981,#059669);">✅</div>
+              <div class="stat-value" style="color:#10B981;">2</div>
+              <div class="stat-label">Applications Submitted</div>
+              <div class="stat-delta" style="color:var(--text-muted);">1 in review</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:linear-gradient(135deg,#F87171,#EF4444);">⚠️</div>
+              <div class="stat-value" style="color:#EF4444;">3</div>
+              <div class="stat-label">Action Required</div>
+              <div class="stat-delta"><a class="link" onclick="showScreen('notifications',document.getElementById('nav-notifications'))">View alerts →</a></div>
+            </div>
+          </div>
+
+          <!-- Top Matches -->
+          <div class="section-header">
+            <div class="section-title">Your Top Matches</div>
+            <a class="link" style="font-size:13px;" onclick="showScreen('schemes',document.getElementById('nav-schemes'))">View All →</a>
+          </div>
+          <div class="hscroll mb-6" style="margin-bottom:24px;">
+            <!-- Card 1 -->
+            <div class="scheme-card eligible">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <span class="category-chip cat-scholarship">🎓 Scholarship</span>
+                <span class="badge" style="background:linear-gradient(135deg,#10B981,#059669);color:#fff;border-radius:50px;font-size:11px;">92% match</span>
+              </div>
+              <div style="font-size:15px;font-weight:600;margin-bottom:4px;line-height:1.3;">PM Scholarship Scheme for Central Armed Police Forces</div>
+              <div style="font-size:14px;color:#10B981;font-weight:600;margin-bottom:4px;">₹25,000 / year</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">🏛 Ministry of Home Affairs</div>
+              <div class="progress-wrap" style="margin-bottom:10px;"><div class="progress-bar green" style="width:92%;height:6px;"></div></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:11px;background:#FEE2E2;color:#DC2626;padding:3px 8px;border-radius:6px;">Closes Dec 31</span>
+                <button class="btn btn-primary btn-sm" onclick="showScreen('scheme-detail',null)">Apply →</button>
+              </div>
+            </div>
+            <!-- Card 2 -->
+            <div class="scheme-card almost">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <span class="category-chip cat-housing">🏠 Housing</span>
+                <span class="badge" style="background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;border-radius:50px;font-size:11px;">78% match</span>
+              </div>
+              <div style="font-size:15px;font-weight:600;margin-bottom:4px;line-height:1.3;">PM Awas Yojana — Gramin</div>
+              <div style="font-size:14px;color:#F59E0B;font-weight:600;margin-bottom:4px;">₹1,20,000 housing grant</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">🏛 Ministry of Rural Development</div>
+              <div class="progress-wrap" style="margin-bottom:10px;"><div class="progress-bar amber" style="width:78%;height:6px;"></div></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:11px;background:#FEF9C3;color:#CA8A04;padding:3px 8px;border-radius:6px;">Upload to Unlock</span>
+                <button class="btn btn-sm" style="background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;">Unlock →</button>
+              </div>
+            </div>
+            <!-- Card 3 -->
+            <div class="scheme-card eligible">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <span class="category-chip cat-health">❤️ Healthcare</span>
+                <span class="badge" style="background:linear-gradient(135deg,#10B981,#059669);color:#fff;border-radius:50px;font-size:11px;">85% match</span>
+              </div>
+              <div style="font-size:15px;font-weight:600;margin-bottom:4px;line-height:1.3;">Ayushman Bharat PM-JAY Health Cover</div>
+              <div style="font-size:14px;color:#10B981;font-weight:600;margin-bottom:4px;">₹5,00,000 / year health cover</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">🏛 Ministry of Health</div>
+              <div class="progress-wrap" style="margin-bottom:10px;"><div class="progress-bar green" style="width:85%;height:6px;"></div></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:11px;background:#FEE2E2;color:#DC2626;padding:3px 8px;border-radius:6px;">Open</span>
+                <button class="btn btn-primary btn-sm">Apply →</button>
+              </div>
+            </div>
+            <!-- Card 4 -->
+            <div class="scheme-card eligible">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <span class="category-chip cat-agri">🌾 Agriculture</span>
+                <span class="badge" style="background:linear-gradient(135deg,#10B981,#059669);color:#fff;border-radius:50px;font-size:11px;">88% match</span>
+              </div>
+              <div style="font-size:15px;font-weight:600;margin-bottom:4px;line-height:1.3;">PM-KISAN Samman Nidhi</div>
+              <div style="font-size:14px;color:#10B981;font-weight:600;margin-bottom:4px;">₹6,000 / year (3 installments)</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">🏛 Ministry of Agriculture</div>
+              <div class="progress-wrap" style="margin-bottom:10px;"><div class="progress-bar green" style="width:88%;height:6px;"></div></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:11px;background:#FEE2E2;color:#DC2626;padding:3px 8px;border-radius:6px;">Open</span>
+                <button class="btn btn-primary btn-sm">Apply →</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alerts -->
+          <div class="section-title mb-4" style="margin-bottom:16px;">Action Required</div>
+          <div class="alert-item warn">
+            <div style="width:36px;height:36px;border-radius:10px;background:#FEF3C7;display:flex;align-items:center;justify-content:center;">⚠️</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:600;">Aadhaar Card expiring soon</div>
+              <div style="font-size:12px;color:var(--text-muted);">Valid until Jan 2027 — renew to keep 4 schemes active</div>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);">2 days ago</div>
+            <span style="color:var(--text-muted);">›</span>
+          </div>
+          <div class="alert-item danger">
+            <div style="width:36px;height:36px;border-radius:10px;background:#FEE2E2;display:flex;align-items:center;justify-content:center;">📄</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:600;">Caste Certificate missing</div>
+              <div style="font-size:12px;color:var(--text-muted);">Required for PM Scholarship — blocks ₹25,000 benefit</div>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);">1 week ago</div>
+            <span style="color:var(--text-muted);">›</span>
+          </div>
+          <div class="alert-item info">
+            <div style="width:36px;height:36px;border-radius:10px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;">🆕</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:600;">3 new schemes matched your profile</div>
+              <div style="font-size:12px;color:var(--text-muted);">Digital Skill India, MNREGA, and 1 more added</div>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);">Today</div>
+            <span style="color:var(--text-muted);">›</span>
+          </div>
+        </div>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────── -->
+      <!-- SCREEN: ELIGIBLE SCHEMES               -->
+      <!-- ────────────────────────────────────── -->
+      <div class="screen" id="screen-schemes">
+        <div style="padding:28px 32px;">
+          <div class="page-header">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div>
+                <h1>Eligible Schemes</h1>
+                <p><span style="color:#10B981;">●</span> 12 schemes matched to your profile</p>
+              </div>
+              <button class="btn btn-primary" onclick="showScreen('apply',null)">⚡ Quick Apply</button>
+            </div>
+          </div>
+
+          <!-- Controls -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+            <div class="tabs" style="margin:0;border:none;">
+              <button class="tab active" onclick="selectTab(this)">All (12)</button>
+              <button class="tab" onclick="selectTab(this)">Eligible (8)</button>
+              <button class="tab" onclick="selectTab(this)">Almost (4)</button>
+              <button class="tab" onclick="selectTab(this)">Applied (2)</button>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-secondary btn-sm">⚙ Filter</button>
+              <select class="input" style="height:36px;width:auto;font-size:13px;">
+                <option>Sort: Best Match</option>
+                <option>Sort: Highest Benefit</option>
+                <option>Sort: Deadline</option>
+              </select>
+              <button class="btn btn-secondary btn-sm">⊞</button>
+            </div>
+          </div>
+
+          <!-- Grid -->
+          <div class="grid-3">
+            <!-- Card: Eligible -->
+            <div class="card" style="border-left:4px solid #10B981;padding:20px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                <span class="category-chip cat-scholarship">🎓 Scholarship</span>
+                <span>🔖</span>
+              </div>
+              <span class="badge badge-eligible mb-2" style="margin-bottom:8px;">ELIGIBLE ✓</span>
+              <div style="font-size:15px;font-weight:600;margin-bottom:4px;">PM Scholarship for CAPF</div>
+              <div style="font-size:12px;color:var(--text-muted);font-style:italic;margin-bottom:6px;">Ministry of Home Affairs</div>
+              <div style="font-size:14px;color:#10B981;font-weight:600;margin-bottom:10px;">₹25,000 annual scholarship</div>
+              <div class="progress-wrap mb-3" style="margin-bottom:10px;"><div class="progress-bar green" style="width:92%;"></div></div>
+              <div style="font-size:12px;text-align:right;color:#10B981;margin-top:-8px;margin-bottom:10px;">92%</div>
+              <div style="display:flex;gap:6px;margin-bottom:12px;">
+                <span style="font-size:11px;background:#DCFCE7;color:#16A34A;padding:2px 8px;border-radius:6px;">Aadhaar ✓</span>
+                <span style="font-size:11px;background:#DCFCE7;color:#16A34A;padding:2px 8px;border-radius:6px;">Income ✓</span>
+                <span style="font-size:11px;background:#FEE2E2;color:#DC2626;padding:2px 8px;border-radius:6px;">Caste ✗</span>
+              </div>
+              <div style="font-size:11px;color:#DC2626;background:#FEE2E2;padding:4px 8px;border-radius:6px;margin-bottom:12px;display:inline-block;">⏰ Closes: Dec 31, 2026</div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-outline btn-sm btn-full" onclick="showScreen('scheme-detail',null)">View Details</button>
+                <button class="btn btn-primary btn-sm btn-full" onclick="showScreen('apply',null)">Apply Now</button>
+              </div>
+            </div>
+
+            <!-- Card: Almost -->
+            <div class="card" style="border-left:4px solid #F59E0B;padding:20px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                <span class="category-chip cat-housing">🏠 Housing</span>
+                <span>🔖</span>
+              </div>
+              <span class="badge badge-almost mb-2" style="margin-bottom:8px;">ALMOST ELIGIBLE</span>
+              <div style="font-size:15px;font-weight:600;margin-bottom:4px;">PM Awas Yojana Gramin</div>
+              <div style="font-size:12px;color:var(--text-muted);font-style:italic;margin-bottom:6px;">Ministry of Rural Development</div>
+              <div style="font-size:14px;color:#F59E0B;font-weight:600;margin-bottom:10px;">₹1,20,000 housing grant</div>
+              <div class="progress-wrap mb-3" style="margin-bottom:10px;"><div class="progress-bar amber" style="width:78%;"></div></div>
+              <div style="font-size:12px;text-align:right;color:#F59E0B;margin-top:-8px;margin-bottom:10px;">78%</div>
+              <div style="font-size:12px;background:#FEF9C3;color:#CA8A04;padding:6px 10px;border-radius:8px;margin-bottom:12px;">
+                📤 Upload Caste Certificate to qualify
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-outline btn-sm btn-full">View Details</button>
+                <button class="btn btn-sm btn-full" style="background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;">Upload to Unlock</button>
+              </div>
+            </div>
+
+            <!-- Card: Eligible -->
+            <div class="card" style="border-left:4px solid #10B981;padding:20px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                <span class="category-chip cat-health">❤️ Healthcare</span>
+                <span>🔖</span>
+              </div>
+              <span class="badge badge-eligible mb-2" style="margin-bottom:8px;">ELIGIBLE ✓</span>
+              <div style="font-size:15px;font-weight:600;margin-bottom:4px;">Ayushman Bharat PM-JAY</div>
+              <div style="font-size:12px;color:var(--text-muted);font-style:italic;margin-bottom:6px;">Ministry of Health & Family Welfare</div>
+              <div style="font-size:14px;color:#10B981;font-weight:600;margin-bottom:10px;">₹5,00,000/year health cover</div>
+              <div class="progress-wrap mb-3" style="margin-bottom:10px;"><div class="progress-bar green" style="width:85%;"></div></div>
+              <div style="font-size:12px;text-align:right;color:#10B981;margin-top:-8px;margin-bottom:10px;">85%</div>
+              <div style="display:flex;gap:6px;margin-bottom:12px;">
+                <span style="font-size:11px;background:#DCFCE7;color:#16A34A;padding:2px 8px;border-radius:6px;">Aadhaar ✓</span>
+                <span style="font-size:11px;background:#DCFCE7;color:#16A34A;padding:2px 8px;border-radius:6px;">Income ✓</span>
+              </div>
+              <div style="font-size:11px;color:#16A34A;background:#DCFCE7;padding:4px 8px;border-radius:6px;margin-bottom:12px;display:inline-block;">✅ Always Open</div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-outline btn-sm btn-full">View Details</button>
+                <button class="btn btn-primary btn-sm btn-full">Apply Now</button>
+              </div>
+            </div>
+
+            <!-- Card: Eligible -->
+            <div class="card" style="border-left:4px solid #10B981;padding:20px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                <span class="category-chip cat-agri">🌾 Agriculture</span><span>🔖</span>
+              </div>
+              <span class="badge badge-eligible mb-2" style="margin-bottom:8px;">ELIGIBLE ✓</span>
+              <div style="font-size:15px;font-weight:600;margin-bottom:4px;">PM-KISAN Samman Nidhi</div>
+              <div style="font-size:12px;color:var(--text-muted);font-style:italic;margin-bottom:6px;">Ministry of Agriculture</div>
+              <div style="font-size:14px;color:#10B981;font-weight:600;margin-bottom:10px;">₹6,000/year (3 installments)</div>
+              <div class="progress-wrap mb-3" style="margin-bottom:10px;"><div class="progress-bar green" style="width:88%;"></div></div>
+              <div style="font-size:12px;text-align:right;color:#10B981;margin-top:-8px;margin-bottom:10px;">88%</div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-outline btn-sm btn-full">View Details</button>
+                <button class="btn btn-primary btn-sm btn-full">Apply Now</button>
+              </div>
+            </div>
+
+            <!-- Card: Almost -->
+            <div class="card" style="border-left:4px solid #F59E0B;padding:20px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                <span class="category-chip cat-women">👩 Women</span><span>🔖</span>
+              </div>
+              <span class="badge badge-almost mb-2" style="margin-bottom:8px;">ALMOST ELIGIBLE</span>
+              <div style="font-size:15px;font-weight:600;margin-bottom:4px;">Beti Bachao Beti Padhao</div>
+              <div style="font-size:12px;color:var(--text-muted);font-style:italic;margin-bottom:6px;">WCD Ministry</div>
+              <div style="font-size:14px;color:#F59E0B;font-weight:600;margin-bottom:10px;">Educational support grant</div>
+              <div class="progress-wrap mb-3" style="margin-bottom:10px;"><div class="progress-bar amber" style="width:65%;"></div></div>
+              <div style="font-size:12px;text-align:right;color:#F59E0B;margin-top:-8px;margin-bottom:10px;">65%</div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-outline btn-sm btn-full">View Details</button>
+                <button class="btn btn-sm btn-full" style="background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;">Upload to Unlock</button>
+              </div>
+            </div>
+
+            <!-- Card: Eligible -->
+            <div class="card" style="border-left:4px solid #10B981;padding:20px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                <span class="category-chip cat-scholarship">💻 Skills</span><span>🔖</span>
+              </div>
+              <span class="badge badge-eligible mb-2" style="margin-bottom:8px;">ELIGIBLE ✓</span>
+              <div style="font-size:15px;font-weight:600;margin-bottom:4px;">PM Digital Skill India</div>
+              <div style="font-size:12px;color:var(--text-muted);font-style:italic;margin-bottom:6px;">Ministry of Skill Development</div>
+              <div style="font-size:14px;color:#10B981;font-weight:600;margin-bottom:10px;">Free certification + ₹8,000 stipend</div>
+              <div class="progress-wrap mb-3" style="margin-bottom:10px;"><div class="progress-bar green" style="width:91%;"></div></div>
+              <div style="font-size:12px;text-align:right;color:#10B981;margin-top:-8px;margin-bottom:10px;">91%</div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-outline btn-sm btn-full">View Details</button>
+                <button class="btn btn-primary btn-sm btn-full">Apply Now</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────── -->
+      <!-- SCREEN: SCHEME DETAIL                  -->
+      <!-- ────────────────────────────────────── -->
+      <div class="screen" id="screen-scheme-detail">
+        <div style="padding:28px 32px;">
+          <div class="scheme-hero">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <button class="btn btn-outline btn-sm" onclick="showScreen('schemes',document.getElementById('nav-schemes'))">← Back to Schemes</button>
+              <div style="display:flex;gap:8px;">
+                <button class="btn-icon">🔖</button>
+                <button class="btn-icon">📤</button>
+              </div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;">
+              <div style="flex:1;min-width:280px;">
+                <div style="font-size:26px;font-weight:700;margin-bottom:8px;line-height:1.2;">PM Scholarship Scheme for Central Armed Police Forces</div>
+                <span class="category-chip cat-scholarship" style="margin-bottom:12px;display:inline-flex;">🎓 Scholarship</span>
+                <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+                  <span class="badge badge-eligible" style="font-size:13px;padding:6px 14px;">ELIGIBLE ✓</span>
+                  <span style="font-size:12px;background:#FEE2E2;color:#DC2626;padding:4px 10px;border-radius:8px;">⏰ Apply by: Dec 31, 2026</span>
+                </div>
+                <div style="margin-top:12px;font-size:13px;color:var(--text-muted);">
+                  <a href="#" class="link">🔗 scholarship.gov.in →</a>
+                </div>
+              </div>
+              <div style="background:rgba(99,102,241,0.1);border:1px solid #6366F1;border-radius:14px;padding:20px 24px;text-align:center;min-width:180px;">
+                <div style="font-size:28px;font-weight:700;" class="gradient-text">₹25,000</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">per year</div>
+                <div style="font-size:12px;color:var(--text-muted);">Annual Scholarship</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabs -->
+          <div class="tabs">
+            <button class="tab active" onclick="selectTab(this)">About</button>
+            <button class="tab" onclick="selectTab(this)">Eligibility</button>
+            <button class="tab" onclick="selectTab(this)">Documents</button>
+            <button class="tab" onclick="selectTab(this)">How to Apply</button>
+          </div>
+
+          <!-- About -->
+          <div class="card" style="margin-bottom:16px;">
+            <h3 style="border-left:3px solid #6366F1;padding-left:10px;margin-bottom:12px;">About this Scheme</h3>
+            <p style="font-size:14px;line-height:1.8;color:var(--text-secondary);">
+              The PM Scholarship Scheme for Central Armed Police Forces (CAPF) and Assam Rifles provides financial support to children and widows of CAPF personnel. The scholarship is awarded to meritorious students pursuing professional degree courses at recognised universities and institutions.
+            </p>
+          </div>
+
+          <!-- Eligibility -->
+          <div class="card" style="margin-bottom:16px;">
+            <h3 style="border-left:3px solid #10B981;padding-left:10px;margin-bottom:14px;">Eligibility Criteria</h3>
+            <div class="criteria-row match">
+              <span class="criteria-label">Annual family income below ₹2,00,000</span>
+              <span class="criteria-val" style="background:#DCFCE7;color:#16A34A;">Your: ₹1,80,000</span>
+              <span>✅</span>
+            </div>
+            <div class="criteria-row match">
+              <span class="criteria-label">Age between 18–25 years</span>
+              <span class="criteria-val" style="background:#DCFCE7;color:#16A34A;">Your: 21 years</span>
+              <span>✅</span>
+            </div>
+            <div class="criteria-row match">
+              <span class="criteria-label">Must be enrolled in graduation or above</span>
+              <span class="criteria-val" style="background:#DCFCE7;color:#16A34A;">B.Tech enrolled</span>
+              <span>✅</span>
+            </div>
+            <div class="criteria-row no-match">
+              <span class="criteria-label">Caste Certificate required (SC/ST/OBC)</span>
+              <span class="criteria-val" style="background:#FEE2E2;color:#DC2626;">Not uploaded</span>
+              <span>❌</span>
+            </div>
+          </div>
+
+          <!-- Documents -->
+          <div class="card" style="margin-bottom:80px;">
+            <h3 style="border-left:3px solid #06B6D4;padding-left:10px;margin-bottom:14px;">Required Documents</h3>
+            <div class="doc-check-row">
+              <span>📄</span>
+              <span style="flex:1;font-size:14px;">Aadhaar Card</span>
+              <span class="badge badge-verified">Uploaded ✓</span>
+            </div>
+            <div class="doc-check-row">
+              <span>💰</span>
+              <span style="flex:1;font-size:14px;">Income Certificate</span>
+              <span class="badge badge-verified">Uploaded ✓</span>
+            </div>
+            <div class="doc-check-row">
+              <span>🏛</span>
+              <span style="flex:1;font-size:14px;">Caste Certificate</span>
+              <span class="badge badge-missing">Missing ✗</span>
+              <button class="btn btn-outline btn-sm" onclick="showScreen('vault',document.getElementById('nav-vault'))">Upload</button>
+            </div>
+            <div class="doc-check-row">
+              <span>📷</span>
+              <span style="flex:1;font-size:14px;">Passport Photo</span>
+              <span class="badge badge-verified">Uploaded ✓</span>
+            </div>
+          </div>
+
+          <!-- Sticky Bottom -->
+          <div class="sticky-bottom">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="score-ring">92%</div>
+              <div>
+                <div style="font-size:14px;font-weight:600;">92% Match</div>
+                <div style="font-size:12px;color:var(--text-muted);">1 document missing</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-outline">Apply on Govt Site →</button>
+              <button class="btn btn-primary" onclick="showScreen('apply',null)">Apply via SmartGov ⚡</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────── -->
+      <!-- SCREEN: DOCUMENT VAULT                 -->
+      <!-- ────────────────────────────────────── -->
+      <div class="screen" id="screen-vault">
+        <div style="padding:28px 32px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <div>
+              <h1>Document Vault</h1>
+              <div style="font-size:14px;color:var(--text-muted);margin-top:4px;">4 of 7 documents uploaded</div>
+              <div class="progress-wrap mt-2" style="width:200px;margin-top:8px;"><div class="progress-bar" style="width:57%;"></div></div>
+            </div>
+            <button class="btn btn-primary" onclick="document.getElementById('uploadModal').classList.add('open')">+ Upload Document</button>
+          </div>
+
+          <div class="grid-3">
+            <!-- Verified -->
+            <div class="doc-card verified">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#10B981,#059669);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;">🪪</div>
+                <span class="badge badge-verified">Verified ✓</span>
+              </div>
+              <div style="font-size:15px;font-weight:600;margin-bottom:4px;">Aadhaar Card</div>
+              <div style="font-size:12px;color:var(--text-muted);">Uploaded 3 days ago</div>
+              <span style="font-size:11px;background:#DCFCE7;color:#16A34A;padding:3px 8px;border-radius:6px;display:inline-block;margin:6px 0;">OCR Complete ✓</span>
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">Valid until 2029</div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn-icon" title="View">👁</button>
+                <button class="btn-icon" title="Re-upload">🔄</button>
+                <button class="btn-icon" style="color:#EF4444;" title="Delete">🗑</button>
+              </div>
+            </div>
+
+            <!-- Verified -->
+            <div class="doc-card verified">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#10B981,#059669);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;">💰</div>
+                <span class="badge badge-verified">Verified ✓</span>
+              </div>
+              <div style="font-size:15px;font-weight:600;margin-bottom:4px;">Income Certificate</div>
+              <div style="font-size:12px;color:var(--text-muted);">Uploaded 1 week ago</div>
+              <span style="font-size:11px;background:#DCFCE7;color:#16A34A;padding:3px 8px;border-radius:6px;display:inline-block;margin:6px 0;">OCR Complete ✓</span>
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">FY 2025–26</div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn-icon">👁</button>
+                <button class="btn-icon">🔄</button>
+                <button class="btn-icon" style="color:#EF4444;">🗑</button>
+              </div>
+            </div>
+
+            <!-- Expired -->
+            <div class="doc-card expired">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#F59E0B,#D97706);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;">🎓</div>
+                <span class="badge badge-expired">Expired ⚠️</span>
+              </div>
+              <div style="font-size:15px;font-weight:600;margin-bottom:4px;">Domicile Certificate</div>
+              <div style="font-size:12px;color:var(--text-muted);">Expired 2 months ago</div>
+              <div style="font-size:12px;color:var(--text-muted);margin:8px 0 14px;">UP domicile — 2022</div>
+              <button class="btn btn-amber btn-sm btn-full">Renew Document</button>
+            </div>
+
+            <!-- Missing -->
+            <div class="doc-card missing" style="text-align:center;">
+              <div style="font-size:48px;color:var(--text-muted);margin-bottom:8px;">☁️</div>
+              <div style="font-size:15px;font-weight:600;margin-bottom:4px;">Caste Certificate</div>
+              <div style="font-size:13px;color:#EF4444;margin-bottom:14px;">Required for 4 schemes</div>
+              <button class="btn btn-outline btn-sm btn-full" onclick="document.getElementById('uploadModal').classList.add('open')">Upload</button>
+              <div style="margin-top:8px;"><a class="link" style="font-size:12px;">Learn what this is</a></div>
+            </div>
+
+            <!-- Missing -->
+            <div class="doc-card missing" style="text-align:center;">
+              <div style="font-size:48px;color:var(--text-muted);margin-bottom:8px;">☁️</div>
+              <div style="font-size:15px;font-weight:600;margin-bottom:4px;">Bank Passbook</div>
+              <div style="font-size:13px;color:#EF4444;margin-bottom:14px;">Required for DBT schemes</div>
+              <button class="btn btn-outline btn-sm btn-full" onclick="document.getElementById('uploadModal').classList.add('open')">Upload</button>
+              <div style="margin-top:8px;"><a class="link" style="font-size:12px;">Learn what this is</a></div>
+            </div>
+
+            <!-- Verified -->
+            <div class="doc-card verified">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#10B981,#059669);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;">📸</div>
+                <span class="badge badge-verified">Verified ✓</span>
+              </div>
+              <div style="font-size:15px;font-weight:600;margin-bottom:4px;">Passport Photo</div>
+              <div style="font-size:12px;color:var(--text-muted);">Uploaded 3 days ago</div>
+              <span style="font-size:11px;background:#DCFCE7;color:#16A34A;padding:3px 8px;border-radius:6px;display:inline-block;margin:6px 0;">Face verified ✓</span>
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">JPEG, 2024</div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn-icon">👁</button>
+                <button class="btn-icon">🔄</button>
+                <button class="btn-icon" style="color:#EF4444;">🗑</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────── -->
+      <!-- SCREEN: AUTO FORM FILL (APPLY)         -->
+      <!-- ────────────────────────────────────── -->
+      <div class="screen" id="screen-apply">
+        <div style="padding:28px 32px;">
+          <!-- Stepper -->
+          <div class="stepper-outer" style="max-width:100%;margin-bottom:28px;">
+            <div class="stepper-row">
+              <div class="step-col"><div class="step-circle done">✓</div><div class="step-label">Documents</div></div>
+              <div class="connector-col"><div class="connector-line done"></div></div>
+              <div class="step-col"><div class="step-circle active">2</div><div class="step-label active">Fill Form</div></div>
+              <div class="connector-col"><div class="connector-line"></div></div>
+              <div class="step-col"><div class="step-circle">3</div><div class="step-label">Confirm</div></div>
+            </div>
+          </div>
+
+          <div style="max-width:680px;margin:0 auto;">
+            <h2 style="margin-bottom:6px;">Review your auto-filled application</h2>
+            <p style="color:var(--text-muted);margin-bottom:20px;">Fields highlighted in amber need your attention</p>
+
+            <!-- Auto-fill info chip -->
+            <div style="background:#EEF2FF;border:1px solid #6366F1;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;margin-bottom:20px;font-size:13px;color:#4F46E5;">
+              ✨ <strong>8 of 11 fields auto-filled</strong> from your profile and documents
+            </div>
+
+            <!-- Legend -->
+            <div style="display:flex;gap:16px;margin-bottom:20px;font-size:12px;color:var(--text-muted);">
+              <span>✅ Auto-filled</span>
+              <span style="color:#F59E0B;">⚠️ Please verify</span>
+              <span style="color:#EF4444;">❌ Fill required</span>
+            </div>
+
+            <!-- Form fields -->
+            <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:80px;">
+              <div class="input-wrap">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <label class="input-label">Full Name</label>
+                  <span style="font-size:11px;color:#10B981;">✅ Auto-filled</span>
+                </div>
+                <div class="input-icon-wrap">
+                  <input class="input" value="Rahul Kumar" readonly style="background:var(--surface-elevated);" />
+                  <span class="icon-right">🔒</span>
+                </div>
+              </div>
+              <div class="input-wrap">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <label class="input-label">Date of Birth</label>
+                  <span style="font-size:11px;color:#10B981;">✅ Auto-filled</span>
+                </div>
+                <input class="input" value="01 Jan 2003" readonly style="background:var(--surface-elevated);" />
+              </div>
+              <div class="input-wrap">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <label class="input-label">Aadhaar Number</label>
+                  <span style="font-size:11px;color:#F59E0B;">⚠️ Please verify</span>
+                </div>
+                <input class="input" value="XXXX XXXX 1234" style="border-color:#F59E0B;box-shadow:0 0 0 2px rgba(245,158,11,0.15);" />
+              </div>
+              <div class="input-wrap">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <label class="input-label">Annual Income</label>
+                  <span style="font-size:11px;color:#10B981;">✅ Auto-filled</span>
+                </div>
+                <input class="input" value="₹1,80,000" readonly style="background:var(--surface-elevated);" />
+              </div>
+              <div class="input-wrap">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <label class="input-label">Category</label>
+                  <span style="font-size:11px;color:#10B981;">✅ Auto-filled</span>
+                </div>
+                <input class="input" value="OBC" readonly style="background:var(--surface-elevated);" />
+              </div>
+              <div class="input-wrap">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <label class="input-label">Course / Program</label>
+                  <span style="font-size:11px;color:#EF4444;">❌ Fill required</span>
+                </div>
+                <input class="input" placeholder="Enter your current course name" style="border-color:#EF4444;box-shadow:0 0 0 2px rgba(239,68,68,0.15);" />
+              </div>
+              <div class="input-wrap">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <label class="input-label">State</label>
+                  <span style="font-size:11px;color:#10B981;">✅ Auto-filled</span>
+                </div>
+                <input class="input" value="Uttar Pradesh" readonly style="background:var(--surface-elevated);" />
+              </div>
+              <div class="input-wrap">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <label class="input-label">Bank Account Number</label>
+                  <span style="font-size:11px;color:#EF4444;">❌ Fill required</span>
+                </div>
+                <input class="input" placeholder="Enter bank account number" style="border-color:#EF4444;box-shadow:0 0 0 2px rgba(239,68,68,0.15);" />
+              </div>
+            </div>
+
+            <div class="sticky-bottom">
+              <div style="font-size:14px;color:var(--text-muted);">9 of 11 fields complete</div>
+              <div style="display:flex;gap:10px;">
+                <button class="btn btn-outline" onclick="showScreen('schemes',document.getElementById('nav-schemes'))">← Cancel</button>
+                <button class="btn btn-primary" onclick="showSuccess()">Submit Application →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────── -->
+      <!-- SCREEN: MY APPLICATIONS                -->
+      <!-- ────────────────────────────────────── -->
+      <div class="screen" id="screen-applications">
+        <div style="padding:28px 32px;">
+          <div class="page-header">
+            <h1>My Applications</h1>
+            <p>Track all your scheme applications</p>
+          </div>
+          <div class="tabs">
+            <button class="tab active" onclick="selectTab(this)">All (4)</button>
+            <button class="tab" onclick="selectTab(this)">Pending (1)</button>
+            <button class="tab" onclick="selectTab(this)">Approved (2)</button>
+            <button class="tab" onclick="selectTab(this)">Rejected (1)</button>
+          </div>
+          <div>
+            <div class="app-card approved">
+              <div style="flex:1;">
+                <div style="font-size:15px;font-weight:600;">Ayushman Bharat PM-JAY</div>
+                <div style="font-size:12px;color:var(--text-muted);">Ministry of Health • Applied 15 Jan 2026</div>
+                <div style="font-size:12px;margin-top:4px;background:var(--surface-elevated);padding:3px 8px;border-radius:6px;display:inline-block;font-family:monospace;">#SGov-2026-00089</div>
+              </div>
+              <div style="text-align:right;">
+                <span class="badge badge-eligible" style="font-size:12px;margin-bottom:8px;display:block;">Approved ✓</span>
+                <button class="btn btn-outline btn-sm">View Details</button>
+              </div>
+            </div>
+            <div class="app-card review">
+              <div style="flex:1;">
+                <div style="font-size:15px;font-weight:600;">PM Scholarship for CAPF</div>
+                <div style="font-size:12px;color:var(--text-muted);">Ministry of Home Affairs • Applied 20 Feb 2026</div>
+                <div style="font-size:12px;margin-top:4px;background:var(--surface-elevated);padding:3px 8px;border-radius:6px;display:inline-block;font-family:monospace;">#SGov-2026-00123</div>
+              </div>
+              <div style="text-align:right;">
+                <span class="badge badge-processing" style="font-size:12px;margin-bottom:8px;display:block;">Under Review</span>
+                <button class="btn btn-outline btn-sm">Track Status</button>
+              </div>
+            </div>
+            <div class="app-card approved">
+              <div style="flex:1;">
+                <div style="font-size:15px;font-weight:600;">PM-KISAN Samman Nidhi</div>
+                <div style="font-size:12px;color:var(--text-muted);">Ministry of Agriculture • Applied 10 Dec 2025</div>
+                <div style="font-size:12px;margin-top:4px;background:var(--surface-elevated);padding:3px 8px;border-radius:6px;display:inline-block;font-family:monospace;">#SGov-2025-00456</div>
+              </div>
+              <div style="text-align:right;">
+                <span class="badge badge-eligible" style="font-size:12px;margin-bottom:8px;display:block;">Approved ✓</span>
+                <button class="btn btn-outline btn-sm">View Details</button>
+              </div>
+            </div>
+            <div class="app-card rejected">
+              <div style="flex:1;">
+                <div style="font-size:15px;font-weight:600;">Beti Bachao Beti Padhao</div>
+                <div style="font-size:12px;color:var(--text-muted);">WCD Ministry • Applied 5 Nov 2025</div>
+                <div style="font-size:12px;margin-top:4px;background:var(--surface-elevated);padding:3px 8px;border-radius:6px;display:inline-block;font-family:monospace;">#SGov-2025-00312</div>
+              </div>
+              <div style="text-align:right;">
+                <span class="badge badge-missing" style="font-size:12px;margin-bottom:8px;display:block;">Rejected ✗</span>
+                <button class="btn btn-outline btn-sm">Re-apply</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────── -->
+      <!-- SCREEN: NOTIFICATIONS                  -->
+      <!-- ────────────────────────────────────── -->
+      <div class="screen" id="screen-notifications">
+        <div style="padding:28px 32px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <div>
+              <h1>Notifications</h1>
+            </div>
+            <a class="link" style="font-size:13px;">Mark all as read</a>
+          </div>
+          <div class="tabs">
+            <button class="tab active" onclick="selectTab(this)">All</button>
+            <button class="tab" onclick="selectTab(this)">Action Required</button>
+            <button class="tab" onclick="selectTab(this)">Informational</button>
+            <button class="tab" onclick="selectTab(this)">Archived</button>
+          </div>
+          <div style="background:var(--bg-card);border-radius:16px;border:1px solid var(--border);overflow:hidden;">
+            <div class="notif-item unread">
+              <div class="notif-dot"></div>
+              <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#6366F1,#4338CA);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🆕</div>
+              <div style="flex:1;">
+                <div style="font-size:14px;font-weight:700;">3 new schemes matched your profile!</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Digital Skill India, MNREGA & Sukanya Samriddhi added to your eligible list.</div>
+              </div>
+              <div style="font-size:12px;color:var(--text-muted);white-space:nowrap;">Just now</div>
+              <button class="btn btn-primary btn-sm" onclick="showScreen('schemes',document.getElementById('nav-schemes'))">Apply Now</button>
+            </div>
+            <div class="notif-item unread">
+              <div class="notif-dot"></div>
+              <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#F87171,#EF4444);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">⏰</div>
+              <div style="flex:1;">
+                <div style="font-size:14px;font-weight:700;">PM Scholarship deadline in 6 days</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Submit your PM Scholarship application before Dec 31, 2026.</div>
+              </div>
+              <div style="font-size:12px;color:var(--text-muted);white-space:nowrap;">2 hrs ago</div>
+              <button class="btn btn-primary btn-sm">Apply</button>
+            </div>
+            <div class="notif-item unread">
+              <div class="notif-dot"></div>
+              <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#F59E0B,#D97706);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📄</div>
+              <div style="flex:1;">
+                <div style="font-size:14px;font-weight:700;">Document expiring: Domicile Certificate</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Your domicile certificate is outdated. Re-upload to avoid losing eligibility.</div>
+              </div>
+              <div style="font-size:12px;color:var(--text-muted);white-space:nowrap;">Yesterday</div>
+              <button class="btn btn-sm" style="background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;" onclick="showScreen('vault',document.getElementById('nav-vault'))">Upload</button>
+            </div>
+            <div class="notif-item">
+              <div style="width:8px;"></div>
+              <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#10B981,#059669);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">✅</div>
+              <div style="flex:1;">
+                <div style="font-size:14px;font-weight:600;">Application Approved — PM-KISAN</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Your PM-KISAN application has been approved. First installment of ₹2,000 will be credited.</div>
+              </div>
+              <div style="font-size:12px;color:var(--text-muted);white-space:nowrap;">3 days ago</div>
+              <a class="link" style="font-size:13px;white-space:nowrap;">View</a>
+            </div>
+            <div class="notif-item">
+              <div style="width:8px;"></div>
+              <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#94A3B8,#64748B);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">ℹ️</div>
+              <div style="flex:1;">
+                <div style="font-size:14px;font-weight:600;">Profile completion tip</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Adding your Caste Certificate will unlock 4 more schemes worth ₹45,000+.</div>
+              </div>
+              <div style="font-size:12px;color:var(--text-muted);white-space:nowrap;">1 week ago</div>
+              <a class="link" style="font-size:13px;white-space:nowrap;">View</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────── -->
+      <!-- SCREEN: MY PROFILE                     -->
+      <!-- ────────────────────────────────────── -->
+      <div class="screen" id="screen-profile">
+        <div style="padding:28px 32px;">
+          <div class="profile-header-card">
+            <div class="profile-avatar">RK</div>
+            <div style="flex:1;">
+              <div style="font-size:22px;font-weight:700;margin-bottom:4px;">Rahul Kumar</div>
+              <div style="opacity:0.85;font-size:14px;margin-bottom:12px;">+91 98765 43210 • rahul@example.com</div>
+              <div style="font-size:13px;opacity:0.8;margin-bottom:8px;">72% complete</div>
+              <div style="height:6px;background:rgba(255,255,255,0.3);border-radius:3px;width:200px;">
+                <div style="height:100%;width:72%;background:#fff;border-radius:3px;"></div>
+              </div>
+            </div>
+            <button class="btn" style="background:#fff;color:#4F46E5;font-size:13px;border-radius:10px;">Edit Profile ✏️</button>
+          </div>
+
+          <div class="profile-section-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <h3>Personal Information</h3>
+              <button class="btn-icon">✏️</button>
+            </div>
+            <div class="profile-field-grid">
+              <div class="profile-field"><label>Full Name</label><span>Rahul Kumar</span></div>
+              <div class="profile-field"><label>Date of Birth</label><span>01 January 2003</span></div>
+              <div class="profile-field"><label>Gender</label><span>Male</span></div>
+              <div class="profile-field"><label>Category</label><span>OBC</span></div>
+              <div class="profile-field"><label>Mobile</label><span>+91 98765 43210</span></div>
+              <div class="profile-field"><label>Email</label><span>rahul@example.com</span></div>
+            </div>
+          </div>
+
+          <div class="profile-section-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <h3>Economic Details</h3>
+              <button class="btn-icon">✏️</button>
+            </div>
+            <div class="profile-field-grid">
+              <div class="profile-field"><label>Annual Income</label><span>₹1,80,000</span></div>
+              <div class="profile-field"><label>Occupation</label><span>Student</span></div>
+              <div class="profile-field"><label>BPL Card</label><span>No</span></div>
+              <div class="profile-field"><label>Bank Account</label><span>Yes — SBI, UP</span></div>
+              <div class="profile-field"><label>PwD Status</label><span>No</span></div>
+            </div>
+          </div>
+
+          <div class="profile-section-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <h3>Location Details</h3>
+              <button class="btn-icon">✏️</button>
+            </div>
+            <div class="profile-field-grid">
+              <div class="profile-field"><label>State</label><span>Uttar Pradesh</span></div>
+              <div class="profile-field"><label>District</label><span>Lucknow</span></div>
+              <div class="profile-field"><label>Pincode</label><span>226001</span></div>
+              <div class="profile-field"><label>Area Type</label><span>Urban</span></div>
+            </div>
+          </div>
+
+          <div class="profile-section-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <h3>Preferences & Notifications</h3>
+              <button class="btn-icon">✏️</button>
+            </div>
+            <div class="profile-field-grid">
+              <div class="profile-field"><label>Language</label><span>Hindi</span></div>
+              <div class="profile-field"><label>SMS Alerts</label><span>Enabled</span></div>
+              <div class="profile-field"><label>WhatsApp</label><span>Disabled</span></div>
+              <div class="profile-field"><label>Push Notifications</label><span>Enabled</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────── -->
+      <!-- SCREEN: SETTINGS                       -->
+      <!-- ────────────────────────────────────── -->
+      <div class="screen" id="screen-settings">
+        <div style="padding:28px 32px;">
+          <div class="page-header"><h1>Settings</h1></div>
+          <div class="settings-layout">
+            <!-- Sub-nav -->
+            <div class="settings-subnav">
+              <div class="settings-subnav-item active" onclick="showSettingsPanel('appearance', this)">🎨 Appearance</div>
+              <div class="settings-subnav-item" onclick="showSettingsPanel('account', this)">👤 Account</div>
+              <div class="settings-subnav-item" onclick="showSettingsPanel('security', this)">🔒 Security</div>
+              <div class="settings-subnav-item" onclick="showSettingsPanel('notifications', this)">🔔 Notifications</div>
+              <div class="settings-subnav-item" onclick="showSettingsPanel('privacy', this)">🛡 Privacy</div>
+              <div class="settings-subnav-item" onclick="showSettingsPanel('language', this)">🌐 Language</div>
+            </div>
+
+            <!-- Content -->
+            <div class="settings-content">
+
+              <!-- Appearance -->
+              <div class="settings-panel active" id="panel-appearance">
+                <div class="card" style="margin-bottom:16px;">
+                  <h3 style="margin-bottom:16px;">Theme</h3>
+                  <div style="display:flex;gap:12px;">
+                    <div class="pill-option selected" onclick="selectPillGroup(this,'themeGroup');applyTheme('light')">☀️ Light</div>
+                    <div class="pill-option" onclick="selectPillGroup(this,'themeGroup');applyTheme('dark')">🌙 Dark</div>
+                    <div class="pill-option" onclick="selectPillGroup(this,'themeGroup')">💻 System</div>
+                  </div>
+                </div>
+                <div class="card">
+                  <h3 style="margin-bottom:16px;">Accent Color</h3>
+                  <div style="display:flex;gap:10px;">
+                    <div class="color-swatch selected" style="background:linear-gradient(135deg,#6366F1,#4338CA);" onclick="selectSwatch(this)"></div>
+                    <div class="color-swatch" style="background:linear-gradient(135deg,#06B6D4,#0891B2);" onclick="selectSwatch(this)"></div>
+                    <div class="color-swatch" style="background:linear-gradient(135deg,#10B981,#059669);" onclick="selectSwatch(this)"></div>
+                    <div class="color-swatch" style="background:linear-gradient(135deg,#F59E0B,#D97706);" onclick="selectSwatch(this)"></div>
+                    <div class="color-swatch" style="background:linear-gradient(135deg,#F43F5E,#E11D48);" onclick="selectSwatch(this)"></div>
+                    <div class="color-swatch" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);" onclick="selectSwatch(this)"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Security -->
+              <div class="settings-panel" id="panel-security">
+                <div class="card" style="margin-bottom:16px;">
+                  <h3 style="margin-bottom:16px;">Security Options</h3>
+                  <div class="toggle-row">
+                    <div>
+                      <div style="font-size:14px;font-weight:500;">Two-Factor Authentication</div>
+                      <div style="font-size:12px;color:var(--text-muted);">Extra security via OTP on login</div>
+                    </div>
+                    <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+                  </div>
+                  <div class="toggle-row">
+                    <div>
+                      <div style="font-size:14px;font-weight:500;">Login Notifications</div>
+                      <div style="font-size:12px;color:var(--text-muted);">Get alerted on new logins</div>
+                    </div>
+                    <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+                  </div>
+                  <div class="toggle-row">
+                    <div>
+                      <div style="font-size:14px;font-weight:500;">Auto Logout after inactivity</div>
+                      <div style="font-size:12px;color:var(--text-muted);">Logout after 30 minutes of inactivity</div>
+                    </div>
+                    <button class="toggle" onclick="this.classList.toggle('on')"></button>
+                  </div>
+                </div>
+                <div class="card">
+                  <h3 style="margin-bottom:16px;">Change Password</h3>
+                  <div style="display:flex;flex-direction:column;gap:12px;max-width:400px;">
+                    <input class="input" type="password" placeholder="Current password" />
+                    <input class="input" type="password" placeholder="New password" />
+                    <input class="input" type="password" placeholder="Confirm new password" />
+                    <button class="btn btn-primary" style="width:fit-content;">Update Password</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Notifications panel -->
+              <div class="settings-panel" id="panel-notifications">
+                <div class="card">
+                  <h3 style="margin-bottom:16px;">Notification Preferences</h3>
+                  <div class="toggle-row"><div><div style="font-size:14px;font-weight:500;">In-App Notifications</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+                  <div class="toggle-row"><div><div style="font-size:14px;font-weight:500;">SMS Alerts</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+                  <div class="toggle-row"><div><div style="font-size:14px;font-weight:500;">Email Digest</div></div><button class="toggle" onclick="this.classList.toggle('on')"></button></div>
+                  <div class="toggle-row"><div><div style="font-size:14px;font-weight:500;">WhatsApp Alerts <span class="beta-badge">Beta</span></div></div><button class="toggle" onclick="this.classList.toggle('on')"></button></div>
+                </div>
+              </div>
+
+              <!-- Account panel -->
+              <div class="settings-panel" id="panel-account">
+                <div class="card">
+                  <h3 style="margin-bottom:16px;">Account Information</h3>
+                  <div style="display:flex;flex-direction:column;gap:12px;max-width:400px;">
+                    <div class="input-wrap"><label class="input-label">Full Name</label><input class="input" value="Rahul Kumar" /></div>
+                    <div class="input-wrap"><label class="input-label">Email</label><input class="input" value="rahul@example.com" /></div>
+                    <div class="input-wrap"><label class="input-label">Mobile</label><input class="input" value="+91 98765 43210" /></div>
+                    <button class="btn btn-primary" style="width:fit-content;">Save Changes</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Privacy -->
+              <div class="settings-panel" id="panel-privacy">
+                <div class="card">
+                  <h3 style="margin-bottom:16px;">Privacy Settings</h3>
+                  <div class="toggle-row"><div><div style="font-size:14px;font-weight:500;">Share anonymous usage data</div><div style="font-size:12px;color:var(--text-muted);">Helps improve SmartGov for everyone</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+                  <div class="toggle-row"><div><div style="font-size:14px;font-weight:500;">Allow personalised recommendations</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+                </div>
+              </div>
+
+              <!-- Language -->
+              <div class="settings-panel" id="panel-language">
+                <div class="card">
+                  <h3 style="margin-bottom:16px;">Language Preference</h3>
+                  <div class="lang-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                    <div class="lang-pill selected" onclick="toggleLang(this)">🇮🇳 Hindi</div>
+                    <div class="lang-pill" onclick="toggleLang(this)">🇬🇧 English</div>
+                    <div class="lang-pill" onclick="toggleLang(this)">🎭 Tamil</div>
+                    <div class="lang-pill" onclick="toggleLang(this)">🌴 Telugu</div>
+                    <div class="lang-pill" onclick="toggleLang(this)">🐟 Bengali</div>
+                    <div class="lang-pill" onclick="toggleLang(this)">🏛 Marathi</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ════ UPLOAD MODAL ════ -->
+<div class="modal-overlay" id="uploadModal">
+  <div class="modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <h3 style="font-size:20px;font-weight:600;">Upload Document</h3>
+      <button class="btn-icon" onclick="document.getElementById('uploadModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleDrop(event)">
+      <div style="font-size:40px;">☁️</div>
+      <div style="font-size:14px;font-weight:500;">Drag & drop or click to browse</div>
+      <div style="font-size:12px;color:var(--text-muted);">Supports PDF, JPG, PNG up to 5MB</div>
+    </div>
+    <input type="file" id="fileInput" style="display:none;" accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileSelect(this)" />
+    <div style="display:flex;gap:6px;margin-top:12px;">
+      <span style="font-size:11px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;">PDF</span>
+      <span style="font-size:11px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;">JPG</span>
+      <span style="font-size:11px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;">PNG</span>
+      <span style="font-size:11px;border:1px solid var(--border);border-radius:6px;padding:3px 8px;">HEIC</span>
+    </div>
+    <div id="uploadProgress" style="display:none;margin-top:12px;">
+      <div class="progress-wrap"><div class="progress-bar" id="uploadBar" style="width:0%;"></div></div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px;" id="uploadLabel">Uploading...</div>
+    </div>
+    <div style="background:var(--surface-elevated);border-radius:10px;padding:12px;margin-top:14px;">
+      <div style="font-size:12px;font-weight:600;margin-bottom:6px;">For best OCR accuracy, ensure:</div>
+      <div style="font-size:12px;color:var(--text-muted);">• Clear and not blurry</div>
+      <div style="font-size:12px;color:var(--text-muted);">• All 4 corners visible</div>
+      <div style="font-size:12px;color:var(--text-muted);">• Right-side up, well lit</div>
+    </div>
+    <button class="btn btn-primary btn-full mt-4" style="margin-top:16px;" onclick="simulateUpload()">Upload & Extract Data</button>
+  </div>
+</div>
+
+<!-- ════ OCR RESULTS MODAL ════ -->
+<div class="modal-overlay" id="ocrModal">
+  <div class="modal">
+    <div style="background:#DCFCE7;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:8px;margin-bottom:20px;font-size:14px;color:#16A34A;font-weight:600;">
+      ✅ Data extracted successfully!
+    </div>
+    <h3 style="font-size:18px;font-weight:600;margin-bottom:14px;">We found the following in your document:</h3>
+    <table class="ocr-table">
+      <thead><tr><th>Field</th><th>Extracted Value</th><th>Confidence</th></tr></thead>
+      <tbody>
+        <tr><td>Full Name</td><td style="font-weight:600;">Rahul Kumar</td><td style="color:#10B981;">High ✅</td></tr>
+        <tr><td>Date of Birth</td><td style="font-weight:600;">01 Jan 2003</td><td style="color:#10B981;">High ✅</td></tr>
+        <tr><td>Aadhaar No.</td><td style="font-weight:600;">XXXX XXXX 1234</td><td style="color:#10B981;">High ✅</td></tr>
+        <tr><td>Address</td><td style="font-weight:600;">Lucknow, UP</td><td style="color:#F59E0B;">Medium ⚠️</td></tr>
+      </tbody>
+    </table>
+    <div style="margin-top:16px;font-size:14px;font-weight:600;margin-bottom:10px;">Sync extracted data to your profile?</div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-primary btn-full" onclick="document.getElementById('ocrModal').classList.remove('open');showToast('success','Profile updated!','Data synced to your profile.')">Sync Now</button>
+      <button class="btn btn-outline btn-full" onclick="document.getElementById('ocrModal').classList.remove('open')">Review & Edit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ SUCCESS SCREEN ════ -->
+<div class="modal-overlay" id="successModal">
+  <div class="modal" style="text-align:center;max-width:440px;">
+    <div class="success-ring" style="background:linear-gradient(135deg,#10B981,#059669);margin-bottom:20px;">
+      <span style="font-size:32px;position:relative;z-index:1;">✅</span>
+    </div>
+    <h2 style="font-size:26px;font-weight:700;color:#10B981;margin-bottom:8px;">Application Submitted!</h2>
+    <div style="font-size:15px;color:var(--text-secondary);margin-bottom:20px;">PM Scholarship Scheme for CAPF</div>
+    <div style="background:var(--surface-elevated);border-radius:12px;padding:16px;margin-bottom:20px;text-align:left;">
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--divider);font-size:13px;">
+        <span style="color:var(--text-muted);">Submission ID</span>
+        <span style="font-family:monospace;font-weight:600;">#SGov-2026-00124</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--divider);font-size:13px;">
+        <span style="color:var(--text-muted);">Submitted</span>
+        <span>Today, 3:42 PM</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;">
+        <span style="color:var(--text-muted);">Status</span>
+        <span class="badge badge-processing">Under Review</span>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-full mb-2" style="margin-bottom:8px;" onclick="document.getElementById('successModal').classList.remove('open');showScreen('applications',document.getElementById('nav-applications'))">
+      Save to My Applications
+    </button>
+    <button class="btn btn-outline btn-full" onclick="document.getElementById('successModal').classList.remove('open');showScreen('dashboard',document.getElementById('nav-dashboard'))">
+      Back to Dashboard
+    </button>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  // ── Screen navigation ──
+  function showScreen(id, navEl) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const screen = document.getElementById('screen-' + id);
+    if (screen) screen.classList.add('active');
+
+    // Update nav
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    if (navEl) navEl.classList.add('active');
+
+    // Breadcrumb
+    const names = {
+      dashboard: 'Dashboard', schemes: 'Eligible Schemes', vault: 'Document Vault',
+      'scheme-detail': 'Scheme Detail', applications: 'My Applications',
+      notifications: 'Notifications', profile: 'My Profile', settings: 'Settings',
+      apply: 'Apply Now'
+    };
+    document.getElementById('breadcrumb').textContent = 'SmartGov / ' + (names[id] || id);
+  }
+
+  // ── Sidebar toggle ──
+  function toggleSidebar() {
+    const sb = document.getElementById('sidebar');
+    sb.style.display = sb.style.display === 'none' ? '' : 'none';
+  }
+
+  // ── Tab select ──
+  function selectTab(el) {
+    const parent = el.parentElement;
+    parent.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  // ── Pill group ──
+  function selectPillGroup(el, group) {
+    el.parentElement.querySelectorAll('.pill-option').forEach(p => p.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+  function selectSwatch(el) {
+    el.parentElement.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+  function toggleLang(el) { el.classList.toggle('selected'); }
+
+  // ── Theme ──
+  function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    localStorage.setItem('theme', isDark ? 'light' : 'dark');
+  }
+  function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('theme', t);
+  }
+  const saved = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+
+  // ── Settings sub-panels ──
+  function showSettingsPanel(id, el) {
+    document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + id).classList.add('active');
+    document.querySelectorAll('.settings-subnav-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  // ── Upload simulation ──
+  function simulateUpload() {
+    document.getElementById('uploadProgress').style.display = 'block';
+    let w = 0;
+    const bar = document.getElementById('uploadBar');
+    const label = document.getElementById('uploadLabel');
+    const iv = setInterval(() => {
+      w += Math.random() * 15;
+      if (w >= 100) {
+        w = 100; clearInterval(iv);
+        label.textContent = 'Processing OCR...';
+        setTimeout(() => {
+          document.getElementById('uploadModal').classList.remove('open');
+          document.getElementById('ocrModal').classList.add('open');
+          document.getElementById('uploadProgress').style.display = 'none';
+          bar.style.width = '0%';
+        }, 800);
+      }
+      bar.style.width = w + '%';
+      label.textContent = 'Uploading... ' + Math.round(w) + '%';
+    }, 150);
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('dropzone').classList.remove('dragover');
+    simulateUpload();
+  }
+  function handleFileSelect(input) {
+    if (input.files.length) simulateUpload();
+  }
+
+  // ── Success modal ──
+  function showSuccess() {
+    document.getElementById('successModal').classList.add('open');
+  }
+
+  // ── Toast ──
+  function showToast(type, title, desc) {
+    const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    toast.innerHTML = `
+      <div style="font-size:20px;">${icons[type]}</div>
+      <div style="flex:1;">
+        <div class="toast-title">${title}</div>
+        ${desc ? `<div class="toast-desc">${desc}</div>` : ''}
+        <div class="toast-progress"><div class="toast-progress-bar" style="color:${type === 'success' ? '#10B981' : type === 'error' ? '#EF4444' : '#F59E0B'};"></div></div>
+      </div>
+    `;
+    document.getElementById('toastContainer').appendChild(toast);
+    setTimeout(() => toast.remove(), 4500);
+  }
+</script>
+</body>
+</html>

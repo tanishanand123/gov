@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartGov Admin Panel</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { overflow: hidden; }
+    .app-shell { height: 100vh; }
+    .app-main { overflow: hidden; }
+    .page-content { height: calc(100vh - 64px); overflow-y: auto; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .admin-stat-card {
+      background: #1E293B; border-radius: 16px; padding: 20px; border: 1px solid #334155;
+    }
+    .admin-stat-val { font-size: 28px; font-weight: 700; }
+    .admin-stat-label { font-size: 13px; color: #64748B; margin-top: 4px; }
+    .admin-badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+    .admin-badge.active-badge { background: #052E16; color: #4ADE80; }
+    .admin-badge.inactive-badge { background: #450A0A; color: #F87171; }
+    .admin-chip { font-size: 11px; background: #1E1B4B; color: #818CF8; padding: 3px 8px; border-radius: 6px; font-weight: 600; }
+  </style>
+</head>
+<body data-theme="dark">
+
+<div class="app-shell">
+
+  <!-- ════ ADMIN SIDEBAR ════ -->
+  <aside class="sidebar admin-sidebar" id="adminSidebar" style="background:#111827;border-right:1px solid #1E293B;">
+    <div class="sidebar-logo" style="border-bottom:1px solid #1E293B;">
+      <span style="font-size:22px;">🏛</span>
+      <div>
+        <div style="font-size:18px;font-weight:700;color:#fff;">SmartGov</div>
+        <div style="font-size:10px;color:#94A3B8;">Admin Panel</div>
+      </div>
+      <span style="font-size:10px;font-weight:700;background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;padding:2px 8px;border-radius:6px;margin-left:auto;">ADMIN</span>
+    </div>
+
+    <nav class="nav-section">
+      <a class="nav-item active" id="anav-dashboard" onclick="showAdminScreen('dashboard', this)" style="color:#94A3B8;">
+        <span class="nav-icon">📊</span> Dashboard
+      </a>
+      <a class="nav-item" id="anav-schemes" onclick="showAdminScreen('schemes', this)" style="color:#94A3B8;">
+        <span class="nav-icon">📋</span> Schemes Management
+      </a>
+      <a class="nav-item" id="anav-users" onclick="showAdminScreen('users', this)" style="color:#94A3B8;">
+        <span class="nav-icon">👥</span> User Management
+      </a>
+      <a class="nav-item" id="anav-docs" onclick="showAdminScreen('docs', this)" style="color:#94A3B8;">
+        <span class="nav-icon">📄</span> Document Queue
+      </a>
+      <a class="nav-item" id="anav-analytics" onclick="showAdminScreen('analytics', this)" style="color:#94A3B8;">
+        <span class="nav-icon">📈</span> Analytics
+      </a>
+      <a class="nav-item" id="anav-notifs" onclick="showAdminScreen('notifs', this)" style="color:#94A3B8;">
+        <span class="nav-icon">🔔</span> Notifications
+      </a>
+    </nav>
+
+    <div class="sidebar-user" style="border-top:1px solid #1E293B;">
+      <div class="sidebar-user-card" style="background:#1E293B;">
+        <div class="avatar-circle">AD</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#fff;">Admin User</div>
+          <div style="font-size:11px;color:#10B981;">● Super Admin</div>
+        </div>
+      </div>
+      <a href="index.html" style="display:block;text-align:center;margin-top:10px;font-size:13px;color:#EF4444;text-decoration:none;font-weight:500;">Logout</a>
+    </div>
+  </aside>
+
+  <!-- ════ MAIN ════ -->
+  <div class="app-main">
+
+    <!-- Admin Top Bar -->
+    <header class="admin-topbar">
+      <button class="btn-icon" style="color:#fff;background:#1E293B;" onclick="toggleAdminSidebar()">☰</button>
+      <div style="color:#94A3B8;font-size:14px;" id="adminBreadcrumb">Admin / Dashboard</div>
+      <div class="topbar-search" style="background:#1E293B;border-color:#334155;max-width:360px;">
+        <span style="color:#64748B;">🔍</span>
+        <input type="text" placeholder="Search users, schemes..." style="color:#fff;" />
+      </div>
+      <div class="topbar-actions" style="margin-left:auto;">
+        <button class="btn-icon" style="color:#94A3B8;background:#1E293B;">🔔</button>
+        <div class="avatar-circle">AD</div>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- ────────────────────────────────────── -->
+      <!-- ADMIN DASHBOARD                        -->
+      <!-- ────────────────────────────────────── -->
+      <div class="screen active" id="ascreen-dashboard">
+        <div style="padding:28px 32px;">
+          <div style="margin-bottom:24px;">
+            <h1 style="font-size:24px;font-weight:700;color:#F1F5F9;">Admin Dashboard</h1>
+            <p style="color:#64748B;">Real-time platform overview — June 25, 2026</p>
+          </div>
+
+          <!-- Stats Row -->
+          <div class="stats-grid mb-6" style="margin-bottom:24px;">
+            <div class="admin-stat-card">
+              <div class="stat-icon" style="background:linear-gradient(135deg,#6366F1,#4338CA);">👥</div>
+              <div class="admin-stat-val gradient-text">10,482</div>
+              <div class="admin-stat-label">Daily Active Users</div>
+              <div class="sparkline"></div>
+              <div style="font-size:12px;color:#10B981;margin-top:6px;">↑ +12% from yesterday</div>
+            </div>
+            <div class="admin-stat-card">
+              <div class="stat-icon" style="background:linear-gradient(135deg,#10B981,#059669);">✅</div>
+              <div class="admin-stat-val" style="color:#10B981;">342</div>
+              <div class="admin-stat-label">Applications Today</div>
+              <div class="sparkline" style="background:linear-gradient(180deg,rgba(16,185,129,0.2) 0%,transparent 100%);"></div>
+              <div style="font-size:12px;color:#10B981;margin-top:6px;">↑ +8% from yesterday</div>
+            </div>
+            <div class="admin-stat-card">
+              <div class="stat-icon" style="background:linear-gradient(135deg,#06B6D4,#0891B2);">📄</div>
+              <div class="admin-stat-val" style="color:#06B6D4;">218</div>
+              <div class="admin-stat-label">Documents Uploaded</div>
+              <div class="sparkline" style="background:linear-gradient(180deg,rgba(6,182,212,0.2) 0%,transparent 100%);"></div>
+              <div style="font-size:12px;color:#F59E0B;margin-top:6px;">47 pending verification</div>
+            </div>
+            <div class="admin-stat-card">
+              <div class="stat-icon" style="background:linear-gradient(135deg,#F59E0B,#D97706);">⏳</div>
+              <div class="admin-stat-val" style="color:#F59E0B;">47</div>
+              <div class="admin-stat-label">Pending Verifications</div>
+              <div class="sparkline" style="background:linear-gradient(180deg,rgba(245,158,11,0.2) 0%,transparent 100%);"></div>
+              <div style="font-size:12px;color:#EF4444;margin-top:6px;">Oldest: 3 days ago</div>
+            </div>
+            <div class="admin-stat-card">
+              <div class="stat-icon" style="background:linear-gradient(135deg,#EC4899,#DB2777);">🆕</div>
+              <div class="admin-stat-val" style="color:#EC4899;">138</div>
+              <div class="admin-stat-label">New Users Today</div>
+              <div class="sparkline" style="background:linear-gradient(180deg,rgba(236,72,153,0.2) 0%,transparent 100%);"></div>
+              <div style="font-size:12px;color:#10B981;margin-top:6px;">↑ +23% from last week</div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div style="margin-bottom:24px;">
+            <div style="font-size:16px;font-weight:600;color:#F1F5F9;margin-bottom:12px;">Quick Actions</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="showAdminScreen('schemes',document.getElementById('anav-schemes'))">+ Add New Scheme</button>
+              <button class="btn btn-secondary" onclick="showAdminScreen('docs',document.getElementById('anav-docs'))" style="background:#1E293B;color:#818CF8;border:1px solid #334155;">Process Document Queue (47)</button>
+              <button class="btn btn-outline" style="border-color:#334155;color:#94A3B8;" onclick="showAdminScreen('notifs',document.getElementById('anav-notifs'))">📢 Send Bulk Notification</button>
+            </div>
+          </div>
+
+          <!-- Recent activity -->
+          <div style="background:#1E293B;border-radius:16px;border:1px solid #334155;padding:20px;">
+            <div style="font-size:16px;font-weight:600;color:#F1F5F9;margin-bottom:16px;">Recent Activity</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;background:rgba(99,102,241,0.06);">
+                <span style="font-size:18px;">📄</span>
+                <div style="flex:1;">
+                  <div style="font-size:13px;color:#F1F5F9;font-weight:500;">New document submitted — Rahul Kumar (Caste Cert)</div>
+                  <div style="font-size:11px;color:#64748B;">2 mins ago</div>
+                </div>
+                <button class="btn btn-sm" style="background:#10B981;color:#fff;border-radius:8px;">Approve</button>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;">
+                <span style="font-size:18px;">✅</span>
+                <div style="flex:1;">
+                  <div style="font-size:13px;color:#F1F5F9;font-weight:500;">Application approved — Priya Singh, Ayushman Bharat</div>
+                  <div style="font-size:11px;color:#64748B;">14 mins ago</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;">
+                <span style="font-size:18px;">🆕</span>
+                <div style="flex:1;">
+                  <div style="font-size:13px;color:#F1F5F9;font-weight:500;">New scheme added — Digital India Digital Skill Programme</div>
+                  <div style="font-size:11px;color:#64748B;">1 hour ago</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;">
+                <span style="font-size:18px;">👤</span>
+                <div style="flex:1;">
+                  <div style="font-size:13px;color:#F1F5F9;font-weight:500;">138 new users registered today</div>
+                  <div style="font-size:11px;color:#64748B;">Rolling total</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────── -->
+      <!-- ADMIN: SCHEMES MANAGEMENT              -->
+      <!-- ────────────────────────────────────── -->
+      <div class="screen" id="ascreen-schemes">
+        <div style="padding:28px 32px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+            <div>
+              <h1 style="font-size:24px;font-weight:700;color:#F1F5F9;">Schemes Management</h1>
+              <p style="color:#64748B;">Manage all government scheme listings</p>
+            </div>
+            <button class="btn btn-primary">+ Add New Scheme</button>
+          </div>
+
+          <!-- Search bar -->
+          <div style="background:#1E293B;border:1px solid #334155;border-radius:12px;display:flex;align-items:center;padding:0 14px;gap:8px;height:44px;margin-bottom:20px;max-width:400px;">
+            <span style="color:#64748B;">🔍</span>
+            <input type="text" placeholder="Search schemes..." style="border:none;background:transparent;color:#F1F5F9;font-size:14px;outline:none;flex:1;font-family:inherit;" />
+          </div>
+
+          <div style="background:#1E293B;border-radius:16px;border:1px solid #334155;overflow:hidden;">
+            <table class="admin-table" style="width:100%;">
+              <thead>
+                <tr>
+                  <th>Scheme Name</th>
+                  <th>Category</th>
+                  <th>Status</th>
+                  <th>Applications</th>
+                  <th>Last Updated</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="color:#F1F5F9;font-weight:500;">PM Scholarship Scheme for CAPF</td>
+                  <td><span class="admin-chip">🎓 Scholarship</span></td>
+                  <td><span class="admin-badge active-badge">● Active</span></td>
+                  <td style="color:#94A3B8;">1,204</td>
+                  <td style="color:#64748B;">Jun 20, 2026</td>
+                  <td style="display:flex;gap:8px;padding-top:14px;">
+                    <button class="btn-icon" style="background:#1E1B4B;color:#818CF8;">✏️</button>
+                    <button class="toggle on" style="transform:scale(0.85);"></button>
+                    <button class="btn-icon" style="color:#EF4444;background:transparent;">🗑</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="color:#F1F5F9;font-weight:500;">PM Awas Yojana Gramin</td>
+                  <td><span class="admin-chip">🏠 Housing</span></td>
+                  <td><span class="admin-badge active-badge">● Active</span></td>
+                  <td style="color:#94A3B8;">8,901</td>
+                  <td style="color:#64748B;">Jun 15, 2026</td>
+                  <td style="display:flex;gap:8px;padding-top:14px;">
+                    <button class="btn-icon" style="background:#1E1B4B;color:#818CF8;">✏️</button>
+                    <button class="toggle on" style="transform:scale(0.85);"></button>
+                    <button class="btn-icon" style="color:#EF4444;background:transparent;">🗑</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="color:#F1F5F9;font-weight:500;">Ayushman Bharat PM-JAY</td>
+                  <td><span class="admin-chip">❤️ Healthcare</span></td>
+                  <td><span class="admin-badge active-badge">● Active</span></td>
+                  <td style="color:#94A3B8;">24,567</td>
+                  <td style="color:#64748B;">Jun 25, 2026</td>
+                  <td style="display:flex;gap:8px;padding-top:14px;">
+                    <button class="btn-icon" style="background:#1E1B4B;color:#818CF8;">✏️</button>
+                    <button class="toggle on" style="transform:scale(0.85);"></button>
+                    <button class="btn-icon" style="color:#EF4444;background:transparent;">🗑</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="color:#F1F5F9;font-weight:500;">PM-KISAN Samman Nidhi</td>
+                  <td><span class="admin-chip">🌾 Agriculture</span></td>
+                  <td><span class="admin-badge active-badge">● Active</span></td>
+                  <td style="color:#94A3B8;">1,02,304</td>
+                  <td style="color:#64748B;">Jun 1, 2026</td>
+                  <td style="display:flex;gap:8px;padding-top:14px;">
+                    <button class="btn-icon" style="background:#1E1B4B;color:#818CF8;">✏️</button>
+                    <button class="toggle on" style="transform:scale(0.85);"></button>
+                    <button class="btn-icon" style="color:#EF4444;background:transparent;">🗑</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="color:#F1F5F9;font-weight:500;">Beti Bachao Beti Padhao</td>
+                  <td><span class="admin-chip">👩 Women</span></td>
+                  <td><span class="admin-badge inactive-badge">● Paused</span></td>
+                  <td style="color:#94A3B8;">3,210</td>
+                  <td style="color:#64748B;">May 10, 2026</td>
+                  <td style="display:flex;gap:8px;padding-top:14px;">
+                    <button class="btn-icon" style="background:#1E1B4B;color:#818CF8;">✏️</button>
+                    <button class="toggle" style="transform:scale(0.85);" onclick="this.classList.toggle('on')"></button>
+                    <button class="btn-icon" style="color:#EF4444;background:transparent;">🗑</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────── -->
+      <!-- ADMIN: USER MANAGEMENT                 -->
+      <!-- ────────────────────────────────────── -->
+      <div class="screen" id="ascreen-users">
+        <div style="padding:28px 32px;">
+          <div style="margin-bottom:24px;">
+            <h1 style="font-size:24px;font-weight:700;color:#F1F5F9;">User Management</h1>
+            <p style="color:#64748B;">10,482 registered citizens</p>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+            <div style="background:#1E293B;border:1px solid #334155;border-radius:12px;display:flex;align-items:center;padding:0 14px;gap:8px;height:44px;flex:1;max-width:360px;">
+              <span style="color:#64748B;">🔍</span>
+              <input type="text" placeholder="Search users..." style="border:none;background:transparent;color:#F1F5F9;font-size:14px;outline:none;flex:1;font-family:inherit;" />
+            </div>
+            <select style="background:#1E293B;border:1px solid #334155;border-radius:12px;height:44px;color:#94A3B8;font-size:14px;padding:0 14px;outline:none;font-family:inherit;">
+              <option>All States</option>
+              <option>Uttar Pradesh</option>
+              <option>Maharashtra</option>
+              <option>Bihar</option>
+            </select>
+          </div>
+
+          <div style="background:#1E293B;border-radius:16px;border:1px solid #334155;overflow:hidden;">
+            <table class="admin-table" style="width:100%;">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Mobile</th>
+                  <th>State</th>
+                  <th>Profile</th>
+                  <th>Applications</th>
+                  <th>Joined</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                      <div class="avatar-circle" style="width:32px;height:32px;font-size:11px;">RK</div>
+                      <div>
+                        <div style="font-size:13px;font-weight:600;color:#F1F5F9;">Rahul Kumar</div>
+                        <div style="font-size:11px;color:#64748B;">rahul@example.com</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="color:#94A3B8;font-size:13px;">+91 98765 43210</td>
+                  <td style="color:#94A3B8;font-size:13px;">Uttar Pradesh</td>
+                  <td><div class="progress-wrap" style="width:80px;"><div class="progress-bar" style="width:72%;height:6px;"></div></div><div style="font-size:11px;color:#64748B;margin-top:2px;">72%</div></td>
+                  <td style="color:#94A3B8;font-size:13px;">4</td>
+                  <td style="color:#64748B;font-size:13px;">Jan 10, 2026</td>
+                  <td><button class="btn btn-sm" style="background:#1E1B4B;color:#818CF8;border-radius:8px;">View</button></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                      <div class="avatar-circle" style="width:32px;height:32px;font-size:11px;">PS</div>
+                      <div>
+                        <div style="font-size:13px;font-weight:600;color:#F1F5F9;">Priya Singh</div>
+                        <div style="font-size:11px;color:#64748B;">priya@example.com</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="color:#94A3B8;font-size:13px;">+91 87654 32109</td>
+                  <td style="color:#94A3B8;font-size:13px;">Maharashtra</td>
+                  <td><div class="progress-wrap" style="width:80px;"><div class="progress-bar" style="width:91%;height:6px;"></div></div><div style="font-size:11px;color:#64748B;margin-top:2px;">91%</div></td>
+                  <td style="color:#94A3B8;font-size:13px;">7</td>
+                  <td style="color:#64748B;font-size:13px;">Feb 3, 2026</td>
+                  <td><button class="btn btn-sm" style="background:#1E1B4B;color:#818CF8;border-radius:8px;">View</button></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                      <div class="avatar-circle" style="width:32px;height:32px;font-size:11px;background:linear-gradient(135deg,#10B981,#059669);">AM</div>
+                      <div>
+                        <div style="font-size:13px;font-weight:600;color:#F1F5F9;">Arjun Mishra</div>
+                        <div style="font-size:11px;color:#64748B;">arjun@example.com</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="color:#94A3B8;font-size:13px;">+91 76543 21098</td>
+                  <td style="color:#94A3B8;font-size:13px;">Bihar</td>
+                  <td><div class="progress-wrap" style="width:80px;"><div class="progress-bar" style="width:45%;height:6px;"></div></div><div style="font-size:11px;color:#64748B;margin-top:2px;">45%</div></td>
+                  <td style="color:#94A3B8;font-size:13px;">1</td>
+                  <td style="color:#64748B;font-size:13px;">Jun 20, 2026</td>
+                  <td><button class="btn btn-sm" style="background:#1E1B4B;color:#818CF8;border-radius:8px;">View</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────── -->
+      <!-- ADMIN: DOCUMENT VERIFICATION QUEUE     -->
+      <!-- ────────────────────────────────────── -->
+      <div class="screen" id="ascreen-docs">
+        <div style="padding:28px 32px;">
+          <div style="margin-bottom:24px;">
+            <h1 style="font-size:24px;font-weight:700;color:#F1F5F9;">Document Verification Queue</h1>
+            <p style="color:#64748B;">47 documents pending review</p>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <!-- Doc card -->
+            <div style="background:#1E293B;border-radius:14px;border:1px solid #334155;padding:20px;display:flex;align-items:center;gap:16px;">
+              <div style="width:80px;height:80px;border-radius:10px;background:#0F172A;display:flex;align-items:center;justify-content:center;font-size:32px;border:1px solid #334155;flex-shrink:0;cursor:pointer;" title="Click to view">
+                🪪
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:15px;font-weight:600;color:#F1F5F9;margin-bottom:4px;">Rahul Kumar — Caste Certificate</div>
+                <div style="font-size:13px;color:#64748B;">Submitted 2 hours ago • PDF • 1.2 MB</div>
+                <div style="font-size:12px;color:#818CF8;margin-top:4px;">OBC Certificate — Uttar Pradesh</div>
+              </div>
+              <div style="display:flex;gap:10px;">
+                <button class="btn btn-success btn-sm" onclick="approveDoc(this)">✅ Approve</button>
+                <button class="btn btn-outline btn-sm" style="border-color:#EF4444;color:#EF4444;" onclick="rejectDoc(this)">✕ Reject</button>
+              </div>
+            </div>
+
+            <div style="background:#1E293B;border-radius:14px;border:1px solid #334155;padding:20px;display:flex;align-items:center;gap:16px;">
+              <div style="width:80px;height:80px;border-radius:10px;background:#0F172A;display:flex;align-items:center;justify-content:center;font-size:32px;border:1px solid #334155;flex-shrink:0;">💰</div>
+              <div style="flex:1;">
+                <div style="font-size:15px;font-weight:600;color:#F1F5F9;margin-bottom:4px;">Priya Singh — Income Certificate</div>
+                <div style="font-size:13px;color:#64748B;">Submitted 5 hours ago • JPG • 850 KB</div>
+                <div style="font-size:12px;color:#818CF8;margin-top:4px;">FY 2025–26 — Maharashtra</div>
+              </div>
+              <div style="display:flex;gap:10px;">
+                <button class="btn btn-success btn-sm" onclick="approveDoc(this)">✅ Approve</button>
+                <button class="btn btn-outline btn-sm" style="border-color:#EF4444;color:#EF4444;">✕ Reject</button>
+              </div>
+            </div>
+
+            <div style="background:#1E293B;border-radius:14px;border:1px solid #334155;padding:20px;display:flex;align-items:center;gap:16px;">
+              <div style="width:80px;height:80px;border-radius:10px;background:#0F172A;display:flex;align-items:center;justify-content:center;font-size:32px;border:1px solid #334155;flex-shrink:0;">🏛</div>
+              <div style="flex:1;">
+                <div style="font-size:15px;font-weight:600;color:#F1F5F9;margin-bottom:4px;">Arjun Mishra — Domicile Certificate</div>
+                <div style="font-size:13px;color:#64748B;">Submitted 3 days ago • PDF • 2.1 MB</div>
+                <div style="font-size:12px;color:#F59E0B;margin-top:4px;">⚠️ Low image quality — may need re-upload</div>
+              </div>
+              <div style="display:flex;gap:10px;">
+                <button class="btn btn-success btn-sm" onclick="approveDoc(this)">✅ Approve</button>
+                <button class="btn btn-outline btn-sm" style="border-color:#EF4444;color:#EF4444;">✕ Reject</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────── -->
+      <!-- ADMIN: ANALYTICS                       -->
+      <!-- ────────────────────────────────────── -->
+      <div class="screen" id="ascreen-analytics">
+        <div style="padding:28px 32px;">
+          <div style="margin-bottom:24px;">
+            <h1 style="font-size:24px;font-weight:700;color:#F1F5F9;">Analytics</h1>
+            <p style="color:#64748B;">Platform performance — Last 30 days</p>
+          </div>
+          <div class="grid-2" style="gap:20px;">
+            <div class="admin-stat-card" style="padding:24px;">
+              <div style="font-size:15px;font-weight:600;color:#F1F5F9;margin-bottom:16px;">User Growth</div>
+              <div style="height:120px;background:linear-gradient(180deg,rgba(99,102,241,0.3) 0%,transparent 100%);border-radius:10px;display:flex;align-items:flex-end;padding:10px;gap:4px;">
+                <div style="flex:1;background:rgba(99,102,241,0.7);border-radius:4px 4px 0 0;height:40%;"></div>
+                <div style="flex:1;background:rgba(99,102,241,0.7);border-radius:4px 4px 0 0;height:55%;"></div>
+                <div style="flex:1;background:rgba(99,102,241,0.7);border-radius:4px 4px 0 0;height:45%;"></div>
+                <div style="flex:1;background:rgba(99,102,241,0.7);border-radius:4px 4px 0 0;height:70%;"></div>
+                <div style="flex:1;background:rgba(99,102,241,0.7);border-radius:4px 4px 0 0;height:60%;"></div>
+                <div style="flex:1;background:rgba(99,102,241,0.7);border-radius:4px 4px 0 0;height:80%;"></div>
+                <div style="flex:1;background:linear-gradient(to top,#6366F1,#06B6D4);border-radius:4px 4px 0 0;height:100%;"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748B;margin-top:6px;"><span>Jun 18</span><span>Jun 19</span><span>Jun 20</span><span>Jun 21</span><span>Jun 22</span><span>Jun 24</span><span>Jun 25</span></div>
+            </div>
+            <div class="admin-stat-card" style="padding:24px;">
+              <div style="font-size:15px;font-weight:600;color:#F1F5F9;margin-bottom:16px;">Applications by Category</div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <div><div style="display:flex;justify-content:space-between;font-size:13px;color:#94A3B8;margin-bottom:4px;"><span>Scholarship</span><span>38%</span></div><div class="progress-wrap"><div style="height:8px;border-radius:4px;background:linear-gradient(to right,#6366F1,#4338CA);width:38%;"></div></div></div>
+                <div><div style="display:flex;justify-content:space-between;font-size:13px;color:#94A3B8;margin-bottom:4px;"><span>Healthcare</span><span>27%</span></div><div class="progress-wrap"><div style="height:8px;border-radius:4px;background:linear-gradient(to right,#10B981,#059669);width:27%;"></div></div></div>
+                <div><div style="display:flex;justify-content:space-between;font-size:13px;color:#94A3B8;margin-bottom:4px;"><span>Housing</span><span>20%</span></div><div class="progress-wrap"><div style="height:8px;border-radius:4px;background:linear-gradient(to right,#F59E0B,#D97706);width:20%;"></div></div></div>
+                <div><div style="display:flex;justify-content:space-between;font-size:13px;color:#94A3B8;margin-bottom:4px;"><span>Agriculture</span><span>15%</span></div><div class="progress-wrap"><div style="height:8px;border-radius:4px;background:linear-gradient(to right,#06B6D4,#0891B2);width:15%;"></div></div></div>
+              </div>
+            </div>
+            <div class="admin-stat-card" style="padding:24px;">
+              <div style="font-size:15px;font-weight:600;color:#F1F5F9;margin-bottom:16px;">Top States by Usage</div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#94A3B8;"><span style="width:20px;text-align:center;">1</span><span style="flex:1;">Uttar Pradesh</span><span style="color:#818CF8;font-weight:600;">3,210 users</span></div>
+                <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#94A3B8;"><span style="width:20px;text-align:center;">2</span><span style="flex:1;">Maharashtra</span><span style="color:#818CF8;font-weight:600;">1,890 users</span></div>
+                <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#94A3B8;"><span style="width:20px;text-align:center;">3</span><span style="flex:1;">Bihar</span><span style="color:#818CF8;font-weight:600;">1,203 users</span></div>
+                <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#94A3B8;"><span style="width:20px;text-align:center;">4</span><span style="flex:1;">West Bengal</span><span style="color:#818CF8;font-weight:600;">980 users</span></div>
+                <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#94A3B8;"><span style="width:20px;text-align:center;">5</span><span style="flex:1;">Tamil Nadu</span><span style="color:#818CF8;font-weight:600;">870 users</span></div>
+              </div>
+            </div>
+            <div class="admin-stat-card" style="padding:24px;">
+              <div style="font-size:15px;font-weight:600;color:#F1F5F9;margin-bottom:16px;">Platform KPIs</div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#64748B;">Avg. profile completion</span><span style="color:#10B981;font-weight:600;">68%</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#64748B;">Auto-fill success rate</span><span style="color:#10B981;font-weight:600;">82%</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#64748B;">Application approval rate</span><span style="color:#10B981;font-weight:600;">74%</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#64748B;">Avg. time to apply</span><span style="color:#818CF8;font-weight:600;">4.8 min</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#64748B;">Document OCR accuracy</span><span style="color:#10B981;font-weight:600;">91%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ────────────────────────────────────── -->
+      <!-- ADMIN: NOTIFICATIONS                   -->
+      <!-- ────────────────────────────────────── -->
+      <div class="screen" id="ascreen-notifs">
+        <div style="padding:28px 32px;">
+          <div style="margin-bottom:24px;">
+            <h1 style="font-size:24px;font-weight:700;color:#F1F5F9;">Send Bulk Notification</h1>
+            <p style="color:#64748B;">Broadcast updates to citizen users</p>
+          </div>
+          <div style="background:#1E293B;border-radius:16px;border:1px solid #334155;padding:28px;max-width:600px;">
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              <div class="input-wrap">
+                <label class="input-label">Target Audience</label>
+                <select class="input" style="background:#0F172A;border-color:#334155;color:#F1F5F9;">
+                  <option>All Users (10,482)</option>
+                  <option>Eligible for Scholarship</option>
+                  <option>Documents Expiring Soon</option>
+                  <option>Incomplete Profiles</option>
+                  <option>Specific State...</option>
+                </select>
+              </div>
+              <div class="input-wrap">
+                <label class="input-label">Channel</label>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <div class="pill-option selected" style="font-size:13px;" onclick="selectPill(this)">📱 In-App</div>
+                  <div class="pill-option" style="font-size:13px;" onclick="selectPill(this)">💬 SMS</div>
+                  <div class="pill-option" style="font-size:13px;" onclick="selectPill(this)">📧 Email</div>
+                  <div class="pill-option" style="font-size:13px;" onclick="selectPill(this)">🟢 WhatsApp</div>
+                </div>
+              </div>
+              <div class="input-wrap">
+                <label class="input-label">Notification Title</label>
+                <input class="input" style="background:#0F172A;border-color:#334155;color:#F1F5F9;" placeholder="e.g. New scheme available for you!" />
+              </div>
+              <div class="input-wrap">
+                <label class="input-label">Message Body</label>
+                <textarea class="input" rows="4" style="background:#0F172A;border-color:#334155;color:#F1F5F9;height:auto;resize:vertical;padding-top:12px;" placeholder="Enter notification message..."></textarea>
+              </div>
+              <div style="display:flex;gap:10px;">
+                <button class="btn btn-primary">📢 Send Now</button>
+                <button class="btn btn-secondary" style="background:#1E293B;color:#818CF8;border:1px solid #334155;">Schedule for Later</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="adminToastContainer"></div>
+
+<script>
+  function showAdminScreen(id, navEl) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const screen = document.getElementById('ascreen-' + id);
+    if (screen) screen.classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    if (navEl) navEl.classList.add('active');
+    const names = { dashboard: 'Dashboard', schemes: 'Schemes Management', users: 'User Management', docs: 'Document Queue', analytics: 'Analytics', notifs: 'Send Notification' };
+    document.getElementById('adminBreadcrumb').textContent = 'Admin / ' + (names[id] || id);
+  }
+
+  function toggleAdminSidebar() {
+    const sb = document.getElementById('adminSidebar');
+    sb.style.display = sb.style.display === 'none' ? '' : 'none';
+  }
+
+  function selectPill(el) {
+    const group = el.parentElement;
+    group.querySelectorAll('.pill-option').forEach(p => p.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function approveDoc(btn) {
+    const card = btn.closest('div[style*="border:1px solid"]');
+    card.style.borderColor = '#10B981';
+    card.style.opacity = '0.6';
+    btn.textContent = '✓ Approved';
+    btn.disabled = true;
+    showAdminToast('success', 'Document Approved', 'The document has been verified successfully.');
+  }
+
+  function rejectDoc(btn) {
+    const card = btn.closest('div[style*="border:1px solid"]');
+    card.style.borderColor = '#EF4444';
+    card.style.opacity = '0.6';
+    btn.textContent = '✕ Rejected';
+    btn.disabled = true;
+    showAdminToast('error', 'Document Rejected', 'User will be notified to re-upload.');
+  }
+
+  function showAdminToast(type, title, desc) {
+    const icons = { success: '✅', error: '❌' };
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    toast.innerHTML = `<div style="font-size:20px;">${icons[type]}</div><div><div class="toast-title">${title}</div><div class="toast-desc">${desc}</div></div>`;
+    document.getElementById('adminToastContainer').appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+</script>
+</body>
+</html>

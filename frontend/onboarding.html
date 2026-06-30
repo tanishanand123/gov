@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartGov Assist — Setup Your Profile</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { background: var(--bg-primary); }
+    .wizard-page {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; padding: 40px 24px;
+    }
+    .wizard-header { text-align: center; margin-bottom: 32px; }
+    .wizard-header-logo { font-size: 20px; font-weight: 800; margin-bottom: 20px; }
+    .step-wrapper { display: none; }
+    .step-wrapper.active { display: block; }
+    .step-icon-circle {
+      width: 56px; height: 56px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; margin: 0 auto 16px;
+    }
+    .wizard-card {
+      background: var(--bg-secondary); border-radius: 20px; padding: 40px;
+      box-shadow: var(--shadow-card); width: 100%; max-width: 640px;
+    }
+    .wizard-card h2 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+    .wizard-card .sub { font-size: 14px; color: var(--text-muted); margin-bottom: 28px; }
+    .nav-row { display: flex; justify-content: space-between; margin-top: 28px; gap: 12px; }
+    .stepper-outer { width: 100%; max-width: 640px; margin-bottom: 28px; }
+    .stepper-row { display: flex; align-items: flex-start; }
+    .step-col { display: flex; flex-direction: column; align-items: center; flex: 1; }
+    .step-col:first-child { flex: 0; }
+    .step-col:last-child { flex: 0; }
+    .connector-col { flex: 1; display: flex; align-items: center; padding-top: 18px; }
+    .connector-line { flex: 1; height: 2px; background: var(--border); transition: background 0.3s; }
+    .connector-line.done { background: linear-gradient(to right, #6366F1, #06B6D4); }
+
+    /* Language grid */
+    .lang-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .lang-pill {
+      display: flex; align-items: center; gap: 6px;
+      padding: 10px 14px; border-radius: 10px;
+      border: 1.5px solid var(--border); cursor: pointer;
+      font-size: 13px; font-weight: 500; transition: all 0.15s;
+      color: var(--text-secondary);
+    }
+    .lang-pill.selected {
+      border-color: #6366F1; background: #EEF2FF; color: #4F46E5; font-weight: 600;
+      box-shadow: 0 0 0 2px rgba(99,102,241,0.2);
+    }
+    [data-theme="dark"] .lang-pill.selected { background: #1E1B4B; color: #818CF8; }
+    .lang-pill:hover:not(.selected) { border-color: #6366F1; color: #4F46E5; }
+
+    /* Toggle rows */
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--divider); }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-row-label { font-size: 14px; font-weight: 500; }
+    .toggle-row-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .beta-badge { font-size: 10px; font-weight: 600; background: #EEF2FF; color: #4F46E5; border-radius: 4px; padding: 2px 6px; margin-left: 6px; }
+    [data-theme="dark"] .beta-badge { background: #1E1B4B; }
+  </style>
+</head>
+<body>
+<div class="wizard-page">
+  <!-- Logo -->
+  <div class="wizard-header">
+    <div class="wizard-header-logo gradient-text-cyan">SmartGov Assist</div>
+    <div style="font-size:13px;color:var(--text-muted);">Let's set up your profile — takes less than 2 minutes</div>
+  </div>
+
+  <!-- Stepper -->
+  <div class="stepper-outer">
+    <div class="stepper-row">
+      <!-- Step 1 -->
+      <div class="step-col">
+        <div class="step-circle active" id="sc1">1</div>
+        <div class="step-label active" id="sl1">Personal</div>
+      </div>
+      <div class="connector-col"><div class="connector-line" id="cl1"></div></div>
+      <!-- Step 2 -->
+      <div class="step-col">
+        <div class="step-circle" id="sc2">2</div>
+        <div class="step-label" id="sl2">Economic</div>
+      </div>
+      <div class="connector-col"><div class="connector-line" id="cl2"></div></div>
+      <!-- Step 3 -->
+      <div class="step-col">
+        <div class="step-circle" id="sc3">3</div>
+        <div class="step-label" id="sl3">Location</div>
+      </div>
+      <div class="connector-col"><div class="connector-line" id="cl3"></div></div>
+      <!-- Step 4 -->
+      <div class="step-col">
+        <div class="step-circle" id="sc4">4</div>
+        <div class="step-label" id="sl4">Preferences</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 1: Personal Info ── -->
+  <div class="wizard-card step-wrapper active" id="step1">
+    <div class="step-icon-circle" style="background:linear-gradient(135deg,#6366F1,#4338CA);">👤</div>
+    <h2>Tell us about yourself</h2>
+    <div class="sub">This helps us match you to the right government schemes</div>
+
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="input-wrap">
+        <label class="input-label">Full Name</label>
+        <input class="input" type="text" placeholder="As per Aadhaar card" />
+      </div>
+      <div class="input-wrap">
+        <label class="input-label">Date of Birth</label>
+        <input class="input" type="date" />
+      </div>
+      <div class="input-wrap">
+        <label class="input-label">Gender</label>
+        <div class="pill-group">
+          <div class="pill-option selected" onclick="selectPill(this)">Male</div>
+          <div class="pill-option" onclick="selectPill(this)">Female</div>
+          <div class="pill-option" onclick="selectPill(this)">Other</div>
+          <div class="pill-option" onclick="selectPill(this)">Prefer not to say</div>
+        </div>
+      </div>
+      <div class="input-wrap">
+        <label class="input-label">Social Category</label>
+        <div class="pill-group">
+          <div class="pill-option" onclick="selectPill(this)">General</div>
+          <div class="pill-option selected" onclick="selectPill(this)">OBC</div>
+          <div class="pill-option" onclick="selectPill(this)">SC</div>
+          <div class="pill-option" onclick="selectPill(this)">ST</div>
+        </div>
+      </div>
+      <div class="input-wrap">
+        <label class="input-label">State</label>
+        <select class="input">
+          <option value="">Select your state</option>
+          <option>Uttar Pradesh</option>
+          <option>Maharashtra</option>
+          <option>Bihar</option>
+          <option>West Bengal</option>
+          <option>Madhya Pradesh</option>
+          <option>Tamil Nadu</option>
+          <option>Rajasthan</option>
+          <option>Karnataka</option>
+          <option>Gujarat</option>
+          <option>Andhra Pradesh</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <span></span>
+      <button class="btn btn-primary" onclick="goStep(2)">Next →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: Economic Info ── -->
+  <div class="wizard-card step-wrapper" id="step2">
+    <div class="step-icon-circle" style="background:linear-gradient(135deg,#F59E0B,#D97706);">₹</div>
+    <h2>Economic Details</h2>
+    <div class="sub">Used to check financial eligibility criteria</div>
+
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="input-wrap">
+        <label class="input-label">Annual Family Income</label>
+        <div class="input-icon-wrap">
+          <span class="icon-left">₹</span>
+          <input class="input" type="number" id="incomeInput" placeholder="180000" oninput="updateSlider()" />
+        </div>
+        <input type="range" class="range-slider" id="incomeSlider" min="0" max="1000000" step="10000" value="180000" oninput="updateIncome()" style="margin-top:10px;" />
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-top:4px;">
+          <span>₹0</span><span style="color:#10B981">Below ₹2L</span><span style="color:#F59E0B">₹2–5L</span><span style="color:#EF4444">Above ₹5L</span><span>₹10L+</span>
+        </div>
+      </div>
+      <div class="input-wrap">
+        <label class="input-label">Occupation</label>
+        <select class="input">
+          <option value="">Select occupation</option>
+          <option>Student</option>
+          <option>Farmer</option>
+          <option>Daily Wage Worker</option>
+          <option>Salaried Employee</option>
+          <option>Self-Employed</option>
+          <option>Unemployed</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-row-label">BPL Card Holder</div>
+          <div class="toggle-row-desc">Below Poverty Line ration card</div>
+        </div>
+        <button class="toggle" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-row-label">Bank Account</div>
+          <div class="toggle-row-desc">Active bank account for DBT</div>
+        </div>
+        <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-row-label">Person with Disability (PwD)</div>
+          <div class="toggle-row-desc">Eligible for additional schemes</div>
+        </div>
+        <button class="toggle" onclick="this.classList.toggle('on')"></button>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn btn-outline" onclick="goStep(1)">← Back</button>
+      <button class="btn btn-primary" onclick="goStep(3)">Next →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: Location ── -->
+  <div class="wizard-card step-wrapper" id="step3">
+    <div class="step-icon-circle" style="background:linear-gradient(135deg,#06B6D4,#0891B2);">📍</div>
+    <h2>Location Details</h2>
+    <div class="sub">State schemes vary — accurate location unlocks more eligibility</div>
+
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="grid-2">
+        <div class="input-wrap">
+          <label class="input-label">State</label>
+          <select class="input">
+            <option>Uttar Pradesh</option>
+            <option>Maharashtra</option>
+            <option>Bihar</option>
+          </select>
+        </div>
+        <div class="input-wrap">
+          <label class="input-label">District</label>
+          <select class="input">
+            <option value="">Select district</option>
+            <option>Lucknow</option>
+            <option>Varanasi</option>
+            <option>Agra</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="input-wrap">
+          <label class="input-label">Block / Taluka</label>
+          <input class="input" type="text" placeholder="Block name" />
+        </div>
+        <div class="input-wrap">
+          <label class="input-label">Pincode</label>
+          <input class="input" type="text" maxlength="6" placeholder="226001" />
+        </div>
+      </div>
+      <div class="input-wrap">
+        <label class="input-label">Area Type</label>
+        <div class="pill-group">
+          <div class="pill-option selected" onclick="selectPill(this)">🏘 Rural</div>
+          <div class="pill-option" onclick="selectPill(this)">🏙 Urban</div>
+        </div>
+      </div>
+      <!-- Map preview placeholder -->
+      <div style="border-radius:12px;background:var(--surface-elevated);height:120px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:13px;border:1px solid var(--border);">
+        🗺 Map preview — Uttar Pradesh highlighted
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn btn-outline" onclick="goStep(2)">← Back</button>
+      <button class="btn btn-primary" onclick="goStep(4)">Next →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 4: Preferences ── -->
+  <div class="wizard-card step-wrapper" id="step4">
+    <div class="step-icon-circle" style="background:linear-gradient(135deg,#EC4899,#DB2777);">🔔</div>
+    <h2>Preferences</h2>
+    <div class="sub">Personalise your experience</div>
+
+    <div style="margin-bottom:24px;">
+      <div style="font-size:15px;font-weight:600;margin-bottom:12px;">Choose your preferred language</div>
+      <div class="lang-grid">
+        <div class="lang-pill selected" onclick="toggleLang(this)">🇮🇳 Hindi</div>
+        <div class="lang-pill" onclick="toggleLang(this)">🇬🇧 English</div>
+        <div class="lang-pill" onclick="toggleLang(this)">🎭 Tamil</div>
+        <div class="lang-pill" onclick="toggleLang(this)">🌴 Telugu</div>
+        <div class="lang-pill" onclick="toggleLang(this)">🐟 Bengali</div>
+        <div class="lang-pill" onclick="toggleLang(this)">🏛 Marathi</div>
+        <div class="lang-pill" onclick="toggleLang(this)">☕ Kannada</div>
+        <div class="lang-pill" onclick="toggleLang(this)">🌊 Malayalam</div>
+        <div class="lang-pill" onclick="toggleLang(this)">🦁 Gujarati</div>
+        <div class="lang-pill" onclick="toggleLang(this)">🌾 Punjabi</div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:12px;">How should we notify you?</div>
+      <div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-row-label">In-App Notifications</div>
+            <div class="toggle-row-desc">Bell icon alerts inside SmartGov</div>
+          </div>
+          <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-row-label">SMS Alerts</div>
+            <div class="toggle-row-desc">Text messages on your mobile</div>
+          </div>
+          <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-row-label">Push Notifications</div>
+            <div class="toggle-row-desc">Browser / device notifications</div>
+          </div>
+          <button class="toggle" onclick="this.classList.toggle('on')"></button>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-row-label">
+              WhatsApp
+              <span class="beta-badge">Beta</span>
+            </div>
+            <div class="toggle-row-desc">Scheme updates on WhatsApp</div>
+          </div>
+          <button class="toggle" onclick="this.classList.toggle('on')"></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-row" style="flex-direction:column;gap:10px;">
+      <button class="btn btn-primary btn-full" style="height:52px;border-radius:14px;font-size:15px;" onclick="window.location.href='app.html'">
+        Finish Setup → 🎉
+      </button>
+      <div style="text-align:center;font-size:12px;color:var(--text-muted);">
+        Takes less than 30 seconds. You can update these anytime.
+      </div>
+      <button class="btn btn-outline btn-full" onclick="goStep(3)">← Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- Theme toggle -->
+<div style="position:fixed;bottom:20px;right:20px;">
+  <button class="btn btn-secondary" onclick="toggleTheme()">🌙</button>
+</div>
+
+<script>
+  let currentStep = 1;
+
+  function goStep(n) {
+    // Hide current
+    document.getElementById('step' + currentStep).classList.remove('active');
+    // Show next
+    document.getElementById('step' + n).classList.add('active');
+    // Update stepper
+    for (let i = 1; i <= 4; i++) {
+      const sc = document.getElementById('sc' + i);
+      const sl = document.getElementById('sl' + i);
+      sc.className = 'step-circle';
+      sl.className = 'step-label';
+      if (i < n) { sc.classList.add('done'); sc.textContent = '✓'; }
+      else if (i === n) { sc.classList.add('active'); sc.textContent = i; sl.classList.add('active'); }
+      else { sc.textContent = i; }
+      if (i < 4) {
+        const cl = document.getElementById('cl' + i);
+        cl.className = 'connector-line' + (i < n ? ' done' : '');
+      }
+    }
+    currentStep = n;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function selectPill(el) {
+    // Toggle within group
+    const group = el.parentElement;
+    group.querySelectorAll('.pill-option').forEach(p => p.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function toggleLang(el) {
+    el.classList.toggle('selected');
+  }
+
+  function updateIncome() {
+    document.getElementById('incomeInput').value = document.getElementById('incomeSlider').value;
+  }
+  function updateSlider() {
+    document.getElementById('incomeSlider').value = document.getElementById('incomeInput').value;
+  }
+
+  function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    localStorage.setItem('theme', isDark ? 'light' : 'dark');
+  }
+  const saved = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+</script>
+</body>
+</html>
