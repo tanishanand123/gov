@@ -13,7 +13,7 @@ class UserProfile(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     auth_id: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
-    mobile: Mapped[Optional[str]] = mapped_column(String(15))
+    mobile: Mapped[Optional[str]] = mapped_column(String(20))
     email: Mapped[Optional[str]] = mapped_column(String(200))
     name: Mapped[Optional[str]] = mapped_column(String(200))
 
@@ -37,6 +37,7 @@ class UserProfile(Base):
     annual_turnover: Mapped[Optional[float]] = mapped_column(Float)
     bpl_card: Mapped[bool] = mapped_column(Boolean, default=False)
     has_bank_account: Mapped[bool] = mapped_column(Boolean, default=True)
+    bank_details: Mapped[Optional[str]] = mapped_column(String(300))
     existing_loans: Mapped[bool] = mapped_column(Boolean, default=False)
     loan_amount_existing: Mapped[Optional[float]] = mapped_column(Float)
 
@@ -86,7 +87,9 @@ class UserProfile(Base):
     # ["farmer", "female", "sc", "karnataka", "small-farmer", "low-income", "diploma"]
 
     profile_completeness: Mapped[float] = mapped_column(Float, default=0.0)
-    language_pref: Mapped[str] = mapped_column(String(10), default="en")
+    language_pref: Mapped[str] = mapped_column(String(100), default="English")
+    preferences: Mapped[Optional[dict]] = mapped_column(JSON)
+    # {"inapp": true, "sms": true, "whatsapp": false}
 
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())

@@ -10,7 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.db.database import init_db
-from app.api import search, schemes
+from app.api import search, schemes, profile, documents
+from app.models import user, document  # noqa: F401 — register models for create_all
 
 settings = get_settings()
 
@@ -60,6 +61,8 @@ app.add_middleware(
 # Routers
 app.include_router(search.router, prefix="/v1", tags=["Search"])
 app.include_router(schemes.router, prefix="/v1", tags=["Schemes"])
+app.include_router(profile.router, prefix="/v1", tags=["Profile"])
+app.include_router(documents.router, prefix="/v1", tags=["Documents"])
 
 
 @app.get("/health")

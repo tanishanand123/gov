@@ -3,92 +3,48 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Star,
-  FileCheck,
-  Users,
-  Settings,
-  Shield,
-  LogOut,
-  BarChart2,
-  ChevronRight,
-} from "lucide-react";
-import { twMerge } from "tailwind-merge";
 
-const adminNavItems = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/schemes", label: "Schemes", icon: Star },
-  { href: "/admin/verifications", label: "Verifications", icon: FileCheck },
-  { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/analytics", label: "Analytics", icon: BarChart2 },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
+const NAV_ITEMS = [
+  { href: "/admin", icon: "📊", label: "Dashboard" },
+  { href: "/admin/schemes", icon: "📋", label: "Schemes Management" },
+  { href: "/admin/users", icon: "👥", label: "User Management" },
+  { href: "/admin/verifications", icon: "📄", label: "Document Queue" },
+  { href: "/admin/analytics", icon: "📈", label: "Analytics" },
+  { href: "/admin/settings", icon: "🔔", label: "Notifications" },
 ];
 
-export function AdminSidebar() {
+export function AdminSidebar({ visible }: { visible: boolean }) {
   const pathname = usePathname();
-
-  const isActive = (href: string) => {
-    if (href === "/admin") return pathname === "/admin";
-    return pathname.startsWith(href);
-  };
+  const isActive = (href: string) => (href === "/admin" ? pathname === "/admin" : pathname.startsWith(href));
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 flex flex-col z-20" style={{ background: "#111827" }}>
-      {/* Logo */}
-      <div className="h-16 flex items-center px-6 border-b border-white/10 shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-            <Shield size={16} className="text-white" />
-          </div>
-          <div>
-            <span className="font-bold text-sm text-white">SmartGov</span>
-            <span className="font-bold text-sm text-primary-light"> Admin</span>
-          </div>
+    <aside className="sidebar admin-sidebar" style={{ background: "#111827", borderRight: "1px solid #1E293B", display: visible ? "flex" : "none" }}>
+      <div className="sidebar-logo" style={{ borderBottom: "1px solid #1E293B" }}>
+        <span style={{ fontSize: 22 }}>🏛</span>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>SmartGov</div>
+          <div style={{ fontSize: 10, color: "#94A3B8" }}>Admin Panel</div>
         </div>
+        <span style={{ fontSize: 10, fontWeight: 700, background: "linear-gradient(135deg,#F59E0B,#D97706)", color: "#fff", padding: "2px 8px", borderRadius: 6, marginLeft: "auto" }}>ADMIN</span>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3">
-        <p className="px-3 mb-2 text-xs font-semibold text-white/30 uppercase tracking-wider">
-          Administration
-        </p>
-        <div className="space-y-0.5">
-          {adminNavItems.map((item) => {
-            const active = isActive(item.href);
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={twMerge(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
-                  active
-                    ? "bg-white/10 text-white border-l-[3px] border-indigo-400 pl-[calc(0.75rem-3px)]"
-                    : "text-white/60 hover:bg-white/5 hover:text-white"
-                )}
-              >
-                <Icon size={18} className={active ? "text-indigo-400" : "text-white/40"} />
-                <span className="flex-1">{item.label}</span>
-                {active && <ChevronRight size={14} className="text-indigo-400" />}
-              </Link>
-            );
-          })}
-        </div>
+      <nav className="nav-section">
+        {NAV_ITEMS.map((item) => (
+          <Link key={item.href} href={item.href} className={`nav-item${isActive(item.href) ? " active" : ""}`} style={{ color: "#94A3B8" }}>
+            <span className="nav-icon">{item.icon}</span> {item.label}
+          </Link>
+        ))}
       </nav>
 
-      {/* Admin card */}
-      <div className="border-t border-white/10 p-3 shrink-0">
-        <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 cursor-pointer transition-colors">
-          <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
-            AD
+      <div className="sidebar-user" style={{ borderTop: "1px solid #1E293B" }}>
+        <div className="sidebar-user-card" style={{ background: "#1E293B" }}>
+          <div className="avatar-circle">AD</div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>Admin User</div>
+            <div style={{ fontSize: 11, color: "#10B981" }}>● Super Admin</div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white truncate">Admin User</p>
-            <p className="text-xs text-white/50 truncate">admin@gov.in</p>
-          </div>
-          <LogOut size={16} className="text-white/40 hover:text-red-400 cursor-pointer shrink-0" />
         </div>
+        <Link href="/" style={{ display: "block", textAlign: "center", marginTop: 10, fontSize: 13, color: "#EF4444", textDecoration: "none", fontWeight: 500 }}>Logout</Link>
       </div>
     </aside>
   );

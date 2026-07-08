@@ -1,396 +1,351 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
-import {
-  Shield,
-  User,
-  IndianRupee,
-  MapPin,
-  Settings,
-  ChevronRight,
-  ChevronLeft,
-  Check,
-} from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Toggle } from "@/components/ui/Toggle";
-import { ProgressBar } from "@/components/ui/ProgressBar";
-
-const steps = [
-  { id: 1, label: "Personal", icon: User },
-  { id: 2, label: "Economic", icon: IndianRupee },
-  { id: 3, label: "Location", icon: MapPin },
-  { id: 4, label: "Preferences", icon: Settings },
-];
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { toggleTheme } from "@/lib/theme";
+import { api } from "@/lib/api";
 
 const STATES = [
-  "Andhra Pradesh", "Assam", "Bihar", "Chhattisgarh", "Delhi", "Goa",
-  "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
-  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya",
-  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Tamil Nadu", "Telangana",
-  "Uttar Pradesh", "Uttarakhand", "West Bengal",
+  "Uttar Pradesh", "Maharashtra", "Bihar", "West Bengal", "Madhya Pradesh",
+  "Tamil Nadu", "Rajasthan", "Karnataka", "Gujarat", "Andhra Pradesh",
 ];
 
 const OCCUPATIONS = [
-  "Farmer", "Agricultural Labourer", "Daily Wage Worker", "Self-Employed",
-  "Salaried Employee", "Business Owner", "Student", "Homemaker", "Unemployed", "Retired",
+  "Student", "Farmer", "Daily Wage Worker", "Salaried Employee", "Self-Employed", "Unemployed", "Other",
 ];
 
 const LANGUAGES = [
-  "English", "Hindi", "Tamil", "Telugu", "Bengali", "Marathi",
-  "Gujarati", "Kannada", "Malayalam", "Punjabi", "Odia", "Assamese",
+  { key: "Hindi", label: "🇮🇳 Hindi" },
+  { key: "English", label: "🇬🇧 English" },
+  { key: "Tamil", label: "🎭 Tamil" },
+  { key: "Telugu", label: "🌴 Telugu" },
+  { key: "Bengali", label: "🐟 Bengali" },
+  { key: "Marathi", label: "🏛 Marathi" },
+  { key: "Kannada", label: "☕ Kannada" },
+  { key: "Malayalam", label: "🌊 Malayalam" },
+  { key: "Gujarati", label: "🦁 Gujarati" },
+  { key: "Punjabi", label: "🌾 Punjabi" },
 ];
 
-function PillGroup({
-  options,
-  value,
-  onChange,
-  multi,
-}: {
-  options: string[];
-  value: string | string[];
-  onChange: (v: string | string[]) => void;
-  multi?: boolean;
-}) {
-  const toggle = (opt: string) => {
-    if (multi) {
-      const arr = value as string[];
-      onChange(arr.includes(opt) ? arr.filter((x) => x !== opt) : [...arr, opt]);
-    } else {
-      onChange(opt);
-    }
-  };
-  const isActive = (opt: string) =>
-    multi ? (value as string[]).includes(opt) : value === opt;
-
+function Pill({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {options.map((opt) => (
-        <button
-          key={opt}
-          type="button"
-          onClick={() => toggle(opt)}
-          className={`px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${
-            isActive(opt)
-              ? "border-primary bg-indigo-50 text-primary"
-              : "border-border bg-surface text-slate-600 hover:border-primary/40"
-          }`}
-        >
-          {opt}
-        </button>
-      ))}
+    <div className={`pill-option${selected ? " selected" : ""}`} onClick={onClick}>
+      {label}
     </div>
   );
 }
 
-function Step1() {
-  const [gender, setGender] = useState("");
-  const [category, setCategory] = useState("");
-
+function ToggleRow({
+  label, desc, on, onToggle, beta,
+}: { label: string; desc: string; on: boolean; onToggle: () => void; beta?: boolean }) {
   return (
-    <div className="space-y-6">
-      <Input label="Full Name" placeholder="Enter your full name" />
-      <Input label="Date of Birth" type="date" />
+    <div className="toggle-row">
       <div>
-        <label className="text-sm font-medium text-text mb-2 block">Gender</label>
-        <PillGroup
-          options={["Male", "Female", "Transgender", "Prefer not to say"]}
-          value={gender}
-          onChange={(v) => setGender(v as string)}
-        />
+        <div className="toggle-row-label">{label}{beta && <span className="beta-badge">Beta</span>}</div>
+        <div className="toggle-row-desc">{desc}</div>
       </div>
-      <div>
-        <label className="text-sm font-medium text-text mb-2 block">Social Category</label>
-        <PillGroup
-          options={["General", "OBC", "SC", "ST", "EWS"]}
-          value={category}
-          onChange={(v) => setCategory(v as string)}
-        />
-      </div>
-      <div>
-        <label className="text-sm font-medium text-text mb-1.5 block">State of Residence</label>
-        <select className="input-base">
-          <option value="">Select state</option>
-          {STATES.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
-      </div>
+      <button className={`toggle${on ? " on" : ""}`} onClick={onToggle} />
     </div>
   );
 }
-
-function Step2() {
-  const [income, setIncome] = useState(150000);
-  const [occupation, setOccupation] = useState("");
-  const [bpl, setBpl] = useState(false);
-  const [bank, setBank] = useState(false);
-  const [pwd, setPwd] = useState(false);
-
-  const formatIncome = (v: number) => {
-    if (v >= 100000) return `₹${(v / 100000).toFixed(1)}L`;
-    return `₹${(v / 1000).toFixed(0)}K`;
-  };
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <div className="flex justify-between items-center mb-2">
-          <label className="text-sm font-medium text-text">Annual Household Income</label>
-          <span className="text-lg font-bold text-primary">{formatIncome(income)}</span>
-        </div>
-        <input
-          type="range"
-          min={0}
-          max={1000000}
-          step={10000}
-          value={income}
-          onChange={(e) => setIncome(Number(e.target.value))}
-          className="w-full h-2 rounded-full accent-primary cursor-pointer"
-        />
-        <div className="flex justify-between text-xs text-muted mt-1">
-          <span>₹0</span>
-          <span>₹50K</span>
-          <span>₹1L</span>
-          <span>₹5L</span>
-          <span>₹10L+</span>
-        </div>
-      </div>
-
-      <div>
-        <label className="text-sm font-medium text-text mb-2 block">Occupation</label>
-        <select className="input-base">
-          <option value="">Select occupation</option>
-          {OCCUPATIONS.map((o) => (
-            <option key={o} value={o}>{o}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="space-y-4 pt-2">
-        <Toggle
-          checked={bpl}
-          onChange={setBpl}
-          label="BPL Card Holder"
-          description="Do you have a Below Poverty Line ration card?"
-        />
-        <Toggle
-          checked={bank}
-          onChange={setBank}
-          label="Jan Dhan Account"
-          description="Do you have a Pradhan Mantri Jan Dhan bank account?"
-        />
-        <Toggle
-          checked={pwd}
-          onChange={setPwd}
-          label="Person with Disability (PwD)"
-          description="Do you have a disability certificate?"
-        />
-      </div>
-    </div>
-  );
-}
-
-function Step3() {
-  const [areaType, setAreaType] = useState("");
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <label className="text-sm font-medium text-text mb-2 block">State</label>
-        <select className="input-base">
-          <option value="">Select state</option>
-          {STATES.map((s) => (
-            <option key={s}>{s}</option>
-          ))}
-        </select>
-      </div>
-      <Input label="District" placeholder="e.g. Nashik" />
-      <Input label="Block / Taluka" placeholder="e.g. Igatpuri" />
-      <Input label="PIN Code" placeholder="e.g. 422403" maxLength={6} />
-      <div>
-        <label className="text-sm font-medium text-text mb-2 block">Area Type</label>
-        <PillGroup
-          options={["Rural", "Urban", "Semi-Urban"]}
-          value={areaType}
-          onChange={(v) => setAreaType(v as string)}
-        />
-      </div>
-    </div>
-  );
-}
-
-function Step4() {
-  const [languages, setLanguages] = useState<string[]>(["English"]);
-  const [notifications, setNotifications] = useState({
-    sms: true,
-    email: true,
-    whatsapp: false,
-    push: true,
-  });
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <label className="text-sm font-medium text-text mb-2 block">Preferred Languages</label>
-        <p className="text-xs text-muted mb-3">Select up to 3 languages for scheme information</p>
-        <div className="grid grid-cols-3 gap-2">
-          {LANGUAGES.map((lang) => (
-            <button
-              key={lang}
-              onClick={() =>
-                setLanguages((prev) =>
-                  prev.includes(lang)
-                    ? prev.filter((l) => l !== lang)
-                    : prev.length < 3
-                    ? [...prev, lang]
-                    : prev
-                )
-              }
-              className={`py-2 px-3 rounded-xl text-sm font-medium border-2 transition-all text-center ${
-                languages.includes(lang)
-                  ? "border-primary bg-indigo-50 text-primary"
-                  : "border-border bg-surface text-slate-600 hover:border-primary/40"
-              }`}
-            >
-              {lang}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <p className="text-sm font-semibold text-text">Notification Preferences</p>
-        <Toggle
-          checked={notifications.sms}
-          onChange={(v) => setNotifications((p) => ({ ...p, sms: v }))}
-          label="SMS Notifications"
-          description="Get updates via SMS on your registered mobile"
-        />
-        <Toggle
-          checked={notifications.email}
-          onChange={(v) => setNotifications((p) => ({ ...p, email: v }))}
-          label="Email Notifications"
-          description="Receive emails about schemes and applications"
-        />
-        <Toggle
-          checked={notifications.whatsapp}
-          onChange={(v) => setNotifications((p) => ({ ...p, whatsapp: v }))}
-          label="WhatsApp Updates"
-          description="Get scheme updates on WhatsApp"
-        />
-        <Toggle
-          checked={notifications.push}
-          onChange={(v) => setNotifications((p) => ({ ...p, push: v }))}
-          label="Push Notifications"
-          description="Browser/app push notifications"
-        />
-      </div>
-    </div>
-  );
-}
-
-const STEP_CONTENT = [Step1, Step2, Step3, Step4];
 
 export default function OnboardingPage() {
-  const [currentStep, setCurrentStep] = useState(1);
+  const router = useRouter();
+  const { data: session } = useSession();
+  const [step, setStep] = useState(1);
+  const [saving, setSaving] = useState(false);
 
-  const StepComponent = STEP_CONTENT[currentStep - 1];
-  const progress = ((currentStep - 1) / (steps.length - 1)) * 100;
+  // Step 1
+  const [name, setName] = useState("");
+  const [dob, setDob] = useState("");
+  const [gender, setGender] = useState("Male");
+  const [category, setCategory] = useState("OBC");
+  const [state, setState] = useState("");
 
-  const handleNext = () => {
-    if (currentStep < steps.length) setCurrentStep(currentStep + 1);
+  // Step 2
+  const [income, setIncome] = useState(180000);
+  const [occupation, setOccupation] = useState("");
+  const [bpl, setBpl] = useState(false);
+  const [bank, setBank] = useState(true);
+  const [pwd, setPwd] = useState(false);
+
+  // Step 3
+  const [district, setDistrict] = useState("");
+  const [block, setBlock] = useState("");
+  const [pincode, setPincode] = useState("");
+  const [areaType, setAreaType] = useState<"Rural" | "Urban">("Rural");
+
+  // Step 4
+  const [languages, setLanguages] = useState<string[]>(["Hindi"]);
+  const [inapp, setInapp] = useState(true);
+  const [sms, setSms] = useState(true);
+  const [push, setPush] = useState(false);
+  const [whatsapp, setWhatsapp] = useState(false);
+
+  const toggleLang = (key: string) => {
+    setLanguages((prev) => (prev.includes(key) ? prev.filter((l) => l !== key) : [...prev, key]));
   };
 
-  const handleBack = () => {
-    if (currentStep > 1) setCurrentStep(currentStep - 1);
+  const finish = async () => {
+    const authId = session?.user?.email;
+    if (!authId) { router.push("/dashboard"); return; }
+    setSaving(true);
+    try {
+      await api.updateProfile(authId, {
+        name,
+        dob,
+        gender,
+        category,
+        state,
+        income: String(income),
+        occupation,
+        bpl: bpl ? "Yes" : "No",
+        bank: bank ? "Yes" : "No",
+        disability: pwd ? "Yes" : "No",
+        district,
+        block,
+        pincode,
+        area: areaType,
+        language: languages.join(", ") || "English",
+        inapp: inapp ? "Enabled" : "Disabled",
+        sms: sms ? "Enabled" : "Disabled",
+        whatsapp: whatsapp ? "Enabled" : "Disabled",
+      });
+    } catch {
+      // non-fatal — proceed to dashboard even if save fails, user can edit profile later
+    } finally {
+      setSaving(false);
+      router.push("/dashboard");
+    }
   };
+
+  const steps = [
+    { n: 1, label: "Personal" },
+    { n: 2, label: "Economic" },
+    { n: 3, label: "Location" },
+    { n: 4, label: "Preferences" },
+  ];
 
   return (
-    <div className="min-h-screen bg-bg flex items-start justify-center py-8 px-4">
-      <div className="w-full max-w-2xl">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-              <Shield size={16} className="text-white" />
-            </div>
-            <span className="font-bold text-lg text-text">SmartGov Assist</span>
-          </Link>
-          <h1 className="text-2xl font-extrabold text-text">Complete Your Profile</h1>
-          <p className="text-muted mt-1">Help us find the best schemes for you</p>
-        </div>
+    <div className="wizard-page">
+      <div className="wizard-header">
+        <div className="wizard-header-logo gradient-text-cyan">SmartGov Assist</div>
+        <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Let&apos;s set up your profile — takes less than 2 minutes</div>
+      </div>
 
-        {/* Step indicators */}
-        <div className="flex items-center justify-between mb-8 relative">
-          <div className="absolute left-0 right-0 top-5 h-0.5 bg-border" />
-          <div
-            className="absolute left-0 top-5 h-0.5 progress-gradient transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
-          {steps.map((step) => {
-            const Icon = step.icon;
-            const done = currentStep > step.id;
-            const active = currentStep === step.id;
-            return (
-              <div key={step.id} className="relative flex flex-col items-center gap-2 z-10">
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all ${
-                    done
-                      ? "gradient-primary border-primary text-white"
-                      : active
-                      ? "bg-surface border-primary text-primary"
-                      : "bg-surface border-border text-muted"
-                  }`}
-                >
-                  {done ? <Check size={16} /> : <Icon size={16} />}
+      {/* Stepper */}
+      <div className="stepper-outer">
+        <div className="stepper-row">
+          {steps.map((s, i) => (
+            <React.Fragment key={s.n}>
+              <div className="step-col">
+                <div className={`step-circle${step === s.n ? " active" : step > s.n ? " done" : ""}`}>
+                  {step > s.n ? "✓" : s.n}
                 </div>
-                <span className={`text-xs font-medium hidden sm:block ${active ? "text-primary" : done ? "text-text" : "text-muted"}`}>
-                  {step.label}
-                </span>
+                <div className={`step-label${step === s.n ? " active" : ""}`}>{s.label}</div>
               </div>
-            );
-          })}
+              {i < steps.length - 1 && (
+                <div className="connector-col">
+                  <div className={`connector-line${step > s.n ? " done" : ""}`} />
+                </div>
+              )}
+            </React.Fragment>
+          ))}
         </div>
+      </div>
 
-        {/* Card */}
-        <div className="card-base p-8">
-          <h2 className="text-xl font-bold text-text mb-1">
-            Step {currentStep}: {steps[currentStep - 1].label} Details
-          </h2>
-          <p className="text-sm text-muted mb-6">
-            {currentStep === 1 && "Tell us about yourself so we can personalise your experience."}
-            {currentStep === 2 && "Your economic details help us match income-based schemes."}
-            {currentStep === 3 && "Your location determines state-specific scheme eligibility."}
-            {currentStep === 4 && "Customise how you want to receive updates."}
-          </p>
+      {/* STEP 1 */}
+      {step === 1 && (
+        <div className="wizard-card">
+          <div className="step-icon-circle" style={{ background: "linear-gradient(135deg,#6366F1,#4338CA)" }}>👤</div>
+          <h2>Tell us about yourself</h2>
+          <div className="sub">This helps us match you to the right government schemes</div>
 
-          <StepComponent />
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div className="input-wrap">
+              <label className="input-label">Full Name</label>
+              <input className="input" type="text" placeholder="As per Aadhaar card" value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+            <div className="input-wrap">
+              <label className="input-label">Date of Birth</label>
+              <input className="input" type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
+            </div>
+            <div className="input-wrap">
+              <label className="input-label">Gender</label>
+              <div className="pill-group">
+                {["Male", "Female", "Other", "Prefer not to say"].map((g) => (
+                  <Pill key={g} label={g} selected={gender === g} onClick={() => setGender(g)} />
+                ))}
+              </div>
+            </div>
+            <div className="input-wrap">
+              <label className="input-label">Social Category</label>
+              <div className="pill-group">
+                {["General", "OBC", "SC", "ST"].map((c) => (
+                  <Pill key={c} label={c} selected={category === c} onClick={() => setCategory(c)} />
+                ))}
+              </div>
+            </div>
+            <div className="input-wrap">
+              <label className="input-label">State</label>
+              <select className="input" value={state} onChange={(e) => setState(e.target.value)}>
+                <option value="">Select your state</option>
+                {STATES.map((s) => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
 
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
-            <Button
-              variant="outline"
-              onClick={handleBack}
-              disabled={currentStep === 1}
-              leftIcon={<ChevronLeft size={16} />}
-            >
-              Back
-            </Button>
-            <span className="text-sm text-muted">Step {currentStep} of {steps.length}</span>
-            {currentStep < steps.length ? (
-              <Button variant="primary" onClick={handleNext} rightIcon={<ChevronRight size={16} />}>
-                Continue
-              </Button>
-            ) : (
-              <Link href="/dashboard">
-                <Button variant="primary" rightIcon={<Check size={16} />}>
-                  Finish Setup
-                </Button>
-              </Link>
-            )}
+          <div className="nav-row">
+            <span />
+            <button className="btn btn-primary" onClick={() => setStep(2)}>Next →</button>
           </div>
         </div>
+      )}
+
+      {/* STEP 2 */}
+      {step === 2 && (
+        <div className="wizard-card">
+          <div className="step-icon-circle" style={{ background: "linear-gradient(135deg,#F59E0B,#D97706)" }}>₹</div>
+          <h2>Economic Details</h2>
+          <div className="sub">Used to check financial eligibility criteria</div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div className="input-wrap">
+              <label className="input-label">Annual Family Income</label>
+              <div className="input-icon-wrap">
+                <span className="icon-left">₹</span>
+                <input
+                  className="input"
+                  type="number"
+                  value={income}
+                  onChange={(e) => setIncome(Number(e.target.value) || 0)}
+                />
+              </div>
+              <input
+                type="range"
+                className="range-slider"
+                min={0}
+                max={1000000}
+                step={10000}
+                value={income}
+                onChange={(e) => setIncome(Number(e.target.value))}
+                style={{ marginTop: 10 }}
+              />
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
+                <span>₹0</span><span style={{ color: "#10B981" }}>Below ₹2L</span><span style={{ color: "#F59E0B" }}>₹2–5L</span><span style={{ color: "#EF4444" }}>Above ₹5L</span><span>₹10L+</span>
+              </div>
+            </div>
+            <div className="input-wrap">
+              <label className="input-label">Occupation</label>
+              <select className="input" value={occupation} onChange={(e) => setOccupation(e.target.value)}>
+                <option value="">Select occupation</option>
+                {OCCUPATIONS.map((o) => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+            <ToggleRow label="BPL Card Holder" desc="Below Poverty Line ration card" on={bpl} onToggle={() => setBpl(!bpl)} />
+            <ToggleRow label="Bank Account" desc="Active bank account for DBT" on={bank} onToggle={() => setBank(!bank)} />
+            <ToggleRow label="Person with Disability (PwD)" desc="Eligible for additional schemes" on={pwd} onToggle={() => setPwd(!pwd)} />
+          </div>
+
+          <div className="nav-row">
+            <button className="btn btn-outline" onClick={() => setStep(1)}>← Back</button>
+            <button className="btn btn-primary" onClick={() => setStep(3)}>Next →</button>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 3 */}
+      {step === 3 && (
+        <div className="wizard-card">
+          <div className="step-icon-circle" style={{ background: "linear-gradient(135deg,#06B6D4,#0891B2)" }}>📍</div>
+          <h2>Location Details</h2>
+          <div className="sub">State schemes vary — accurate location unlocks more eligibility</div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div className="grid-2">
+              <div className="input-wrap">
+                <label className="input-label">State</label>
+                <select className="input" value={state} onChange={(e) => setState(e.target.value)}>
+                  {STATES.map((s) => <option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div className="input-wrap">
+                <label className="input-label">District</label>
+                <input className="input" type="text" placeholder="District" value={district} onChange={(e) => setDistrict(e.target.value)} />
+              </div>
+            </div>
+            <div className="grid-2">
+              <div className="input-wrap">
+                <label className="input-label">Block / Taluka</label>
+                <input className="input" type="text" placeholder="Block name" value={block} onChange={(e) => setBlock(e.target.value)} />
+              </div>
+              <div className="input-wrap">
+                <label className="input-label">Pincode</label>
+                <input className="input" type="text" maxLength={6} placeholder="226001" value={pincode} onChange={(e) => setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))} />
+              </div>
+            </div>
+            <div className="input-wrap">
+              <label className="input-label">Area Type</label>
+              <div className="pill-group">
+                <Pill label="🏘 Rural" selected={areaType === "Rural"} onClick={() => setAreaType("Rural")} />
+                <Pill label="🏙 Urban" selected={areaType === "Urban"} onClick={() => setAreaType("Urban")} />
+              </div>
+            </div>
+            <div style={{ borderRadius: 12, background: "var(--surface-elevated)", height: 120, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: 13, border: "1px solid var(--border)" }}>
+              🗺 Map preview — {state || "select a state"}
+            </div>
+          </div>
+
+          <div className="nav-row">
+            <button className="btn btn-outline" onClick={() => setStep(2)}>← Back</button>
+            <button className="btn btn-primary" onClick={() => setStep(4)}>Next →</button>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 4 */}
+      {step === 4 && (
+        <div className="wizard-card">
+          <div className="step-icon-circle" style={{ background: "linear-gradient(135deg,#EC4899,#DB2777)" }}>🔔</div>
+          <h2>Preferences</h2>
+          <div className="sub">Personalise your experience</div>
+
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Choose your preferred language</div>
+            <div className="lang-grid">
+              {LANGUAGES.map((l) => (
+                <div key={l.key} className={`lang-pill${languages.includes(l.key) ? " selected" : ""}`} onClick={() => toggleLang(l.key)}>
+                  {l.label}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>How should we notify you?</div>
+            <div>
+              <ToggleRow label="In-App Notifications" desc="Bell icon alerts inside SmartGov" on={inapp} onToggle={() => setInapp(!inapp)} />
+              <ToggleRow label="SMS Alerts" desc="Text messages on your mobile" on={sms} onToggle={() => setSms(!sms)} />
+              <ToggleRow label="Push Notifications" desc="Browser / device notifications" on={push} onToggle={() => setPush(!push)} />
+              <ToggleRow label="WhatsApp" desc="Scheme updates on WhatsApp" on={whatsapp} onToggle={() => setWhatsapp(!whatsapp)} beta />
+            </div>
+          </div>
+
+          <div className="nav-row" style={{ flexDirection: "column", gap: 10 }}>
+            <button className="btn btn-primary btn-full" style={{ height: 52, borderRadius: 14, fontSize: 15 }} onClick={finish} disabled={saving}>
+              {saving ? "Saving…" : "Finish Setup → 🎉"}
+            </button>
+            <div style={{ textAlign: "center", fontSize: 12, color: "var(--text-muted)" }}>
+              Takes less than 30 seconds. You can update these anytime.
+            </div>
+            <button className="btn btn-outline btn-full" onClick={() => setStep(3)}>← Back</button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ position: "fixed", bottom: 20, right: 20 }}>
+        <button className="btn btn-secondary" onClick={toggleTheme}>🌙</button>
       </div>
     </div>
   );

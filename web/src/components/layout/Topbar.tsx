@@ -1,51 +1,53 @@
 "use client";
 
-import React, { useState } from "react";
-import { Search, Bell, Sun, Moon, Menu, X } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { toggleTheme } from "@/lib/theme";
 
-export function Topbar() {
-  const [isDark, setIsDark] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+const BREADCRUMBS: Record<string, string> = {
+  "/dashboard": "Dashboard",
+  "/dashboard/schemes": "Eligible Schemes",
+  "/dashboard/vault": "Document Vault",
+  "/dashboard/applications": "My Applications",
+  "/dashboard/notifications": "Notifications",
+  "/dashboard/profile": "My Profile",
+  "/dashboard/settings": "Settings",
+  "/dashboard/apply": "Apply Now",
+};
 
-  const toggleDark = () => {
-    setIsDark(!isDark);
-    document.documentElement.classList.toggle("dark");
-  };
+export function Topbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
+  const pathname = usePathname();
+  const { data: session } = useSession();
+  const [mounted, setMounted] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- avoids SSR/client initials mismatch
+  useEffect(() => setMounted(true), []);
+
+  const name = session?.user?.name || "User";
+  const initials = name.split(" ").filter(Boolean).map((p) => p[0]).join("").slice(0, 2).toUpperCase() || "U";
+
+  const crumb =
+    BREADCRUMBS[pathname] ||
+    (pathname.startsWith("/dashboard/schemes/") ? "Scheme Detail" : pathname.startsWith("/dashboard/apply") ? "Apply Now" : "Dashboard");
 
   return (
-    <header className="fixed top-0 left-0 md:left-64 right-0 h-16 bg-surface border-b border-border flex items-center px-4 md:px-6 gap-4 z-10">
-      {/* Search */}
-      <div className="flex-1 max-w-[480px]">
-        <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-          <input
-            type="search"
-            placeholder="Search schemes, documents, applications..."
-            className="w-full h-9 pl-9 pr-4 text-sm bg-elevated border border-border rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-          />
-        </div>
+    <header className="topbar">
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <button className="btn-icon" onClick={onToggleSidebar}>☰</button>
+        <span style={{ fontSize: 14, color: "var(--text-muted)" }}>SmartGov / {crumb}</span>
       </div>
-
-      <div className="flex items-center gap-2 ml-auto">
-        {/* Dark mode toggle */}
-        <button
-          onClick={toggleDark}
-          className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-elevated text-muted hover:text-text transition-colors"
-          aria-label="Toggle dark mode"
-        >
-          {isDark ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-
-        {/* Notifications */}
-        <button className="relative w-9 h-9 flex items-center justify-center rounded-xl hover:bg-elevated text-muted hover:text-text transition-colors">
-          <Bell size={18} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-danger rounded-full" />
-        </button>
-
-        {/* Avatar */}
-        <button className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center text-white font-bold text-sm">
-          RK
-        </button>
+      <div className="topbar-search">
+        <span>🔍</span>
+        <input type="text" placeholder="Search schemes, documents..." />
+      </div>
+      <div className="topbar-actions">
+        <button className="btn-icon" title="Language">🌐</button>
+        <Link href="/dashboard/notifications" className="btn-icon notif-badge" title="Notifications" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>🔔</Link>
+        <button className="btn-icon" onClick={toggleTheme} title="Toggle theme">🌙</button>
+        <Link href="/dashboard/profile" className="avatar-circle" style={{ cursor: "pointer", textDecoration: "none" }}>
+          {mounted ? initials : ""}
+        </Link>
       </div>
     </header>
   );

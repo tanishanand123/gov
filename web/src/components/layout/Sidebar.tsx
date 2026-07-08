@@ -3,99 +3,62 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Star,
-  FolderOpen,
-  FileText,
-  Bell,
-  User,
-  Settings,
-  Shield,
-  LogOut,
-  ChevronRight,
-} from "lucide-react";
-import { twMerge } from "tailwind-merge";
+import { useSession, signOut } from "next-auth/react";
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/schemes", label: "Eligible Schemes", icon: Star },
-  { href: "/dashboard/vault", label: "Document Vault", icon: FolderOpen },
-  { href: "/dashboard/applications", label: "My Applications", icon: FileText },
-  { href: "/dashboard/notifications", label: "Notifications", icon: Bell, badge: 3 },
-  { href: "/dashboard/profile", label: "My Profile", icon: User },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+const NAV_ITEMS = [
+  { href: "/dashboard", icon: "🏠", label: "Dashboard" },
+  { href: "/dashboard/schemes", icon: "📋", label: "Eligible Schemes" },
+  { href: "/dashboard/vault", icon: "🗂", label: "Document Vault" },
+  { href: "/dashboard/applications", icon: "📝", label: "My Applications" },
+  { href: "/dashboard/notifications", icon: "🔔", label: "Notifications" },
+  { href: "/dashboard/profile", icon: "👤", label: "My Profile" },
+  { href: "/dashboard/settings", icon: "⚙️", label: "Settings" },
 ];
 
-export function Sidebar() {
+export function Sidebar({ visible }: { visible: boolean }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
 
-  const isActive = (href: string) => {
-    if (href === "/dashboard") return pathname === "/dashboard";
-    return pathname.startsWith(href);
-  };
+  const name = session?.user?.name || "User";
+  const initials = name.split(" ").filter(Boolean).map((p) => p[0]).join("").slice(0, 2).toUpperCase() || "U";
+
+  const isActive = (href: string) => (href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href));
 
   return (
-    <aside className="hidden md:flex fixed left-0 top-0 h-full w-64 bg-surface border-r border-border flex-col z-20">
-      {/* Logo */}
-      <div className="h-16 flex items-center px-6 border-b border-border shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-            <Shield size={16} className="text-white" />
-          </div>
-          <div>
-            <span className="font-bold text-sm text-text">SmartGov</span>
-            <span className="font-bold text-sm text-primary"> Assist</span>
-          </div>
+    <aside className="sidebar" style={{ display: visible ? "flex" : "none" }}>
+      <div className="sidebar-logo">
+        <span style={{ fontSize: 22 }}>🏛</span>
+        <div>
+          <div className="sidebar-logo-text gradient-text-cyan">SmartGov</div>
+          <div style={{ fontSize: 10, color: "var(--text-muted)" }}>Assist</div>
         </div>
+        <div className="sidebar-version">v1.0</div>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3">
-        <div className="space-y-0.5">
-          {navItems.map((item) => {
-            const active = isActive(item.href);
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={twMerge(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group relative",
-                  active
-                    ? "bg-indigo-50 text-primary border-l-[3px] border-primary ml-0 pl-[calc(0.75rem-3px)]"
-                    : "text-slate-600 hover:bg-elevated hover:text-text"
-                )}
-              >
-                <Icon
-                  size={18}
-                  className={active ? "text-primary" : "text-slate-400 group-hover:text-slate-600"}
-                />
-                <span className="flex-1">{item.label}</span>
-                {item.badge && (
-                  <span className="w-5 h-5 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center">
-                    {item.badge}
-                  </span>
-                )}
-                {active && <ChevronRight size={14} className="text-primary" />}
-              </Link>
-            );
-          })}
-        </div>
+      <nav className="nav-section">
+        {NAV_ITEMS.map((item) => (
+          <Link key={item.href} href={item.href} className={`nav-item${isActive(item.href) ? " active" : ""}`}>
+            <span className="nav-icon">{item.icon}</span> {item.label}
+          </Link>
+        ))}
       </nav>
 
-      {/* User card */}
-      <div className="border-t border-border p-3 shrink-0">
-        <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-elevated cursor-pointer transition-colors">
-          <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center text-white font-bold text-sm shrink-0">
-            RK
+      <div className="sidebar-user">
+        <div className="sidebar-user-card">
+          <div className="avatar-circle">{initials}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>{name}</div>
+            <div style={{ fontSize: 11, color: "#10B981", display: "flex", alignItems: "center", gap: 4 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10B981", display: "inline-block" }} />Active
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-text truncate">Rajan Kumar</p>
-            <p className="text-xs text-muted truncate">rajan@example.com</p>
-          </div>
-          <LogOut size={16} className="text-muted hover:text-danger cursor-pointer shrink-0" />
         </div>
+        <button
+          onClick={() => signOut({ callbackUrl: "/" })}
+          style={{ display: "block", width: "100%", textAlign: "center", marginTop: 10, fontSize: 13, color: "#EF4444", background: "none", border: "none", fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}
+        >
+          Logout
+        </button>
       </div>
     </aside>
   );

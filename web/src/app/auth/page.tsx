@@ -4,65 +4,44 @@ import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import {
-  Shield,
-  Eye,
-  EyeOff,
-  Phone,
-  Mail,
-  Lock,
-  User,
-  ArrowRight,
-  CheckCircle2,
-  Loader2,
-  AlertCircle,
-} from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Modal } from "@/components/ui/Modal";
+import { toggleTheme } from "@/lib/theme";
 
 type Tab = "login" | "register";
 
+function pwScore(password: string): number {
+  let score = 0;
+  if (password.length >= 6) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+  return score;
+}
+
+const PW_CLASSES = ["", "weak", "fair", "strong", "vstrong"];
+const PW_LABELS = ["", "Weak", "Fair", "Strong", "Very Strong"];
+const PW_COLORS = ["", "#EF4444", "#F59E0B", "#10B981", "#6366F1"];
+
 function PasswordStrength({ password }: { password: string }) {
-  const checks = [
-    { label: "8+ characters", pass: password.length >= 8 },
-    { label: "Uppercase", pass: /[A-Z]/.test(password) },
-    { label: "Number", pass: /\d/.test(password) },
-    { label: "Special char", pass: /[^A-Za-z0-9]/.test(password) },
-  ];
-  const score = checks.filter((c) => c.pass).length;
-  const colors = ["bg-danger", "bg-amber-400", "bg-amber-400", "bg-success", "bg-success"];
-  const labels = ["", "Weak", "Fair", "Good", "Strong"];
-  if (!password) return null;
+  const score = pwScore(password);
   return (
-    <div className="mt-2">
-      <div className="flex gap-1 mb-1.5">
+    <>
+      <div className="pw-strength">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i < score ? colors[score] : "bg-slate-200"}`} />
+          <div key={i} className={`pw-segment${i < score ? " " + PW_CLASSES[score] : ""}`} />
         ))}
       </div>
-      <div className="flex items-center justify-between">
-        <div className="flex gap-2 flex-wrap">
-          {checks.map((c) => (
-            <span key={c.label} className={`text-xs flex items-center gap-0.5 ${c.pass ? "text-success" : "text-muted"}`}>
-              <CheckCircle2 size={10} /> {c.label}
-            </span>
-          ))}
+      {password && (
+        <div style={{ fontSize: 12, color: PW_COLORS[score] || "var(--text-muted)", marginTop: 4 }}>
+          {PW_LABELS[score]}
         </div>
-        {score > 0 && (
-          <span className={`text-xs font-semibold ${score >= 3 ? "text-success" : score >= 2 ? "text-amber-500" : "text-danger"}`}>
-            {labels[score]}
-          </span>
-        )}
-      </div>
-    </div>
+      )}
+    </>
   );
 }
 
 function ErrorBanner({ msg }: { msg: string }) {
   return (
-    <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">
-      <AlertCircle size={16} className="shrink-0 mt-0.5" />
+    <div style={{ background: "#FEE2E2", color: "#DC2626", borderRadius: 10, padding: "10px 14px", fontSize: 13, marginBottom: 4 }}>
       {msg}
     </div>
   );
@@ -129,53 +108,64 @@ function OTPModal({
     });
   };
 
+  if (!open) return null;
+
   return (
-    <Modal open={open} onClose={onClose} title="Verify Your Mobile" description={`Enter the 6-digit OTP for +91 ${mobile}`}>
-      {devOtp && (
-        <div className="mb-4 p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-center">
-          <p className="text-xs text-indigo-500 font-medium mb-1">Dev mode — OTP (no SMS sent)</p>
-          <p className="text-2xl font-extrabold tracking-[0.3em] text-indigo-700">{devOtp}</p>
+    <div className={`modal-overlay${open ? " open" : ""}`}>
+      <div className="modal otp-modal">
+        <div style={{ textAlign: "center", marginBottom: 6, fontSize: 40 }}>📱</div>
+        <h3>Verify your mobile</h3>
+        <div className="sub">
+          Enter the 6-digit OTP sent to<br /><strong>+91-{mobile}</strong>
         </div>
-      )}
-      <div className="flex gap-2 justify-center my-4">
-        {otp.map((digit, i) => (
-          <input
-            key={i}
-            ref={(el) => { refs.current[i] = el; }}
-            type="text"
-            inputMode="numeric"
-            maxLength={1}
-            value={digit}
-            onChange={(e) => handleChange(i, e.target.value)}
-            onKeyDown={(e) => handleKeyDown(i, e)}
-            className="w-11 h-13 text-center text-xl font-bold border-2 border-border rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-          />
-        ))}
+
+        {devOtp && (
+          <div style={{ background: "#EEF2FF", borderRadius: 10, padding: 12, textAlign: "center", marginBottom: 14 }}>
+            <p style={{ fontSize: 11, color: "#4F46E5", fontWeight: 600, marginBottom: 4 }}>Dev mode — OTP (no SMS sent)</p>
+            <p style={{ fontSize: 22, fontWeight: 800, letterSpacing: "0.3em", color: "#4338CA" }}>{devOtp}</p>
+          </div>
+        )}
+
+        <div className="otp-row">
+          {otp.map((digit, i) => (
+            <input
+              key={i}
+              ref={(el) => { refs.current[i] = el; }}
+              className="otp-box"
+              maxLength={1}
+              value={digit}
+              onChange={(e) => handleChange(i, e.target.value)}
+              onKeyDown={(e) => handleKeyDown(i, e)}
+            />
+          ))}
+        </div>
+
+        {error && <div style={{ marginTop: 12 }}><ErrorBanner msg={error} /></div>}
+
+        <button className="btn btn-primary btn-full mt-4" style={{ marginTop: 20 }} onClick={verify} disabled={loading}>
+          {loading ? "Verifying…" : "Verify OTP →"}
+        </button>
+        <button className="btn btn-outline btn-full mt-2" style={{ marginTop: 8 }} onClick={onClose}>Cancel</button>
+
+        <div className="countdown">
+          Didn&apos;t receive it?{" "}
+          <span style={{ cursor: "pointer" }} onClick={resend}>Resend</span>
+        </div>
       </div>
-      {error && <ErrorBanner msg={error} />}
-      <Button variant="primary" fullWidth onClick={verify} disabled={loading} className="mt-3">
-        {loading ? <Loader2 size={16} className="animate-spin" /> : "Verify & Continue"}
-      </Button>
-      <p className="text-center text-sm text-muted mt-3">
-        Didn&apos;t receive it?{" "}
-        <button className="text-primary font-semibold hover:underline" onClick={resend}>Resend OTP</button>
-      </p>
-    </Modal>
+    </div>
   );
 }
 
 export default function AuthPage() {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("login");
+  const [tab, setTab] = useState<Tab>("register");
 
-  // login state
   const [loginId, setLoginId] = useState("");
   const [loginPwd, setLoginPwd] = useState("");
   const [showLoginPwd, setShowLoginPwd] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
 
-  // register state
   const [regName, setRegName] = useState("");
   const [regMobile, setRegMobile] = useState("");
   const [regEmail, setRegEmail] = useState("");
@@ -187,7 +177,6 @@ export default function AuthPage() {
   const [regError, setRegError] = useState("");
   const [regLoading, setRegLoading] = useState(false);
 
-  // OTP
   const [otpOpen, setOtpOpen] = useState(false);
   const [devOtp, setDevOtp] = useState("");
   const [pendingRegData, setPendingRegData] = useState<{ name: string; email: string; mobile: string; password: string } | null>(null);
@@ -197,11 +186,7 @@ export default function AuthPage() {
     setLoginError("");
     if (!loginId || !loginPwd) { setLoginError("Please fill in all fields."); return; }
     setLoginLoading(true);
-    const res = await signIn("credentials", {
-      email: loginId,
-      password: loginPwd,
-      redirect: false,
-    });
+    const res = await signIn("credentials", { email: loginId, password: loginPwd, redirect: false });
     setLoginLoading(false);
     if (res?.error) {
       setLoginError("Invalid email/mobile or password.");
@@ -210,35 +195,19 @@ export default function AuthPage() {
     }
   };
 
-  const handleGoogleSignIn = () => {
-    signIn("google", { callbackUrl: "/dashboard" });
-  };
+  const handleGoogleSignIn = () => signIn("google", { callbackUrl: "/dashboard" });
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegError("");
-
-    if (!regName || !regMobile || !regEmail || !regPwd || !regConfirm) {
-      setRegError("All fields are required."); return;
-    }
-    if (!/^\d{10}$/.test(regMobile)) {
-      setRegError("Enter a valid 10-digit mobile number."); return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail)) {
-      setRegError("Enter a valid email address."); return;
-    }
-    if (regPwd.length < 8) {
-      setRegError("Password must be at least 8 characters."); return;
-    }
-    if (regPwd !== regConfirm) {
-      setRegError("Passwords do not match."); return;
-    }
-    if (!agreed) {
-      setRegError("Please accept the Terms of Service."); return;
-    }
+    if (!regName || !regMobile || !regEmail || !regPwd || !regConfirm) { setRegError("All fields are required."); return; }
+    if (!/^\d{10}$/.test(regMobile)) { setRegError("Enter a valid 10-digit mobile number."); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail)) { setRegError("Enter a valid email address."); return; }
+    if (regPwd.length < 8) { setRegError("Password must be at least 8 characters."); return; }
+    if (regPwd !== regConfirm) { setRegError("Passwords do not match."); return; }
+    if (!agreed) { setRegError("Please accept the Terms of Service."); return; }
 
     setRegLoading(true);
-    // Request OTP first
     const otpRes = await fetch("/api/otp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -248,7 +217,7 @@ export default function AuthPage() {
     setRegLoading(false);
 
     if (otpData.success) {
-      setDevOtp(otpData.otp); // shown on screen (dev mode)
+      setDevOtp(otpData.otp);
       setPendingRegData({ name: regName, email: regEmail, mobile: regMobile, password: regPwd });
       setOtpOpen(true);
     } else {
@@ -274,12 +243,7 @@ export default function AuthPage() {
       return;
     }
 
-    // Auto-login after registration
-    const loginRes = await signIn("credentials", {
-      email: pendingRegData.email,
-      password: pendingRegData.password,
-      redirect: false,
-    });
+    const loginRes = await signIn("credentials", { email: pendingRegData.email, password: pendingRegData.password, redirect: false });
     setRegLoading(false);
 
     if (loginRes?.error) {
@@ -290,225 +254,174 @@ export default function AuthPage() {
     }
   };
 
-  const GoogleButton = ({ label }: { label: string }) => (
-    <button
-      type="button"
-      onClick={handleGoogleSignIn}
-      className="w-full h-12 flex items-center justify-center gap-3 border-2 border-border rounded-xl text-sm font-semibold text-text hover:bg-elevated transition-colors"
-    >
-      <svg viewBox="0 0 24 24" className="w-5 h-5">
-        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-      </svg>
-      {label}
-    </button>
-  );
-
   return (
-    <div className="min-h-screen flex" style={{ background: "linear-gradient(135deg, #4F46E5 0%, #6366F1 50%, #06B6D4 100%)" }}>
-      {/* Left panel */}
-      <div className="hidden lg:flex flex-col justify-center px-16 py-12 flex-1">
-        <Link href="/" className="flex items-center gap-2.5 mb-12">
-          <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-            <Shield size={22} className="text-white" />
-          </div>
-          <span className="font-bold text-2xl text-white">SmartGov Assist</span>
-        </Link>
-        <h1 className="text-4xl font-extrabold text-white leading-tight mb-6">
-          Your Gateway to<br />Government Benefits
-        </h1>
-        <p className="text-indigo-200 text-lg mb-10">500+ schemes. Auto-matched. One platform.</p>
-        <div className="space-y-4">
-          {["Instant eligibility matching", "Secure document vault", "Track all applications", "Real-time status alerts"].map((item) => (
-            <div key={item} className="flex items-center gap-3 text-white">
-              <CheckCircle2 size={18} className="text-indigo-200 shrink-0" />
-              <span>{item}</span>
-            </div>
-          ))}
-        </div>
+    <div className="auth-bg">
+      <div className="orb" style={{ width: 400, height: 400, background: "rgba(99,102,241,0.15)", top: -100, left: -100 }} />
+      <div className="orb" style={{ width: 300, height: 300, background: "rgba(6,182,212,0.1)", bottom: -80, right: -80 }} />
+
+      <div className="auth-nav">
+        <Link href="/" className="auth-logo gradient-text-cyan" style={{ textDecoration: "none" }}>SmartGov</Link>
+        <Link href="/" className="back-link">← Back to Home</Link>
       </div>
 
-      {/* Right panel */}
-      <div className="w-full lg:w-[480px] flex items-center justify-center p-4 lg:p-8">
-        <div className="w-full bg-surface rounded-[20px] shadow-2xl p-8">
-          {/* Tab switcher */}
-          <div className="flex bg-elevated rounded-xl p-1 mb-8">
-            {(["login", "register"] as Tab[]).map((t) => (
-              <button
-                key={t}
-                onClick={() => { setTab(t); setLoginError(""); setRegError(""); }}
-                className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${tab === t ? "bg-surface shadow text-primary" : "text-muted hover:text-text"}`}
-              >
-                {t === "login" ? "Login" : "Create Account"}
-              </button>
-            ))}
-          </div>
+      <div className="auth-card">
+        <div className="text-center" style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 28, fontWeight: 900 }} className="gradient-text-cyan">SmartGov</div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>Assist • Govt Welfare Platform</div>
+        </div>
 
-          {tab === "login" ? (
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div>
-                <h2 className="text-2xl font-bold text-text">Welcome back</h2>
-                <p className="text-muted text-sm mt-1">Sign in to your account</p>
-              </div>
+        <div className="auth-tabs">
+          <button className={`auth-tab${tab === "register" ? " active" : ""}`} onClick={() => { setTab("register"); setLoginError(""); }}>Create Account</button>
+          <button className={`auth-tab${tab === "login" ? " active" : ""}`} onClick={() => { setTab("login"); setRegError(""); }}>Sign In</button>
+        </div>
 
-              {loginError && <ErrorBanner msg={loginError} />}
+        {tab === "register" ? (
+          <form onSubmit={handleRegister}>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", marginBottom: 20 }}>
+              Join 10,000+ citizens claiming their benefits
+            </div>
 
-              <Input
-                label="Email Address"
-                type="email"
-                placeholder="you@example.com"
-                leftIcon={<Mail size={16} />}
-                value={loginId}
-                onChange={(e) => setLoginId(e.target.value)}
-              />
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {regError && <ErrorBanner msg={regError} />}
 
-              <div>
-                <Input
-                  label="Password"
-                  type={showLoginPwd ? "text" : "password"}
-                  placeholder="Enter your password"
-                  leftIcon={<Lock size={16} />}
-                  value={loginPwd}
-                  onChange={(e) => setLoginPwd(e.target.value)}
-                  rightIcon={
-                    <button type="button" onClick={() => setShowLoginPwd(!showLoginPwd)}>
-                      {showLoginPwd ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  }
-                />
-                <div className="flex justify-end mt-1">
-                  <button type="button" className="text-xs text-primary hover:underline font-medium">Forgot Password?</button>
+              <div className="input-wrap">
+                <label className="input-label">Full Name</label>
+                <div className="input-icon-wrap">
+                  <span className="icon-left">👤</span>
+                  <input className="input" type="text" placeholder="Rahul Kumar" value={regName} onChange={(e) => setRegName(e.target.value)} />
                 </div>
               </div>
 
-              <Button type="submit" variant="primary" fullWidth size="lg" disabled={loginLoading}>
-                {loginLoading ? <Loader2 size={16} className="animate-spin" /> : <><span>Sign In</span> <ArrowRight size={16} /></>}
-              </Button>
-
-              <div className="relative flex items-center gap-3 my-2">
-                <div className="flex-1 h-px bg-border" />
-                <span className="text-xs text-muted">or continue with</span>
-                <div className="flex-1 h-px bg-border" />
+              <div className="input-wrap">
+                <label className="input-label">Mobile Number</label>
+                <div className="input-icon-wrap">
+                  <span className="icon-left">🇮🇳 +91</span>
+                  <input
+                    className="input"
+                    type="tel"
+                    placeholder="9876543210"
+                    style={{ paddingLeft: 70 }}
+                    value={regMobile}
+                    onChange={(e) => setRegMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                  />
+                </div>
               </div>
 
-              <GoogleButton label="Continue with Google" />
-            </form>
-          ) : (
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div>
-                <h2 className="text-2xl font-bold text-text">Create account</h2>
-                <p className="text-muted text-sm mt-1">Join 10,000+ citizens already using SmartGov</p>
+              <div className="input-wrap">
+                <label className="input-label">Email Address</label>
+                <div className="input-icon-wrap">
+                  <span className="icon-left">✉️</span>
+                  <input className="input" type="email" placeholder="rahul@example.com" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} />
+                </div>
               </div>
 
-              {regError && <ErrorBanner msg={regError} />}
-
-              <Input
-                label="Full Name"
-                placeholder="Rajan Kumar"
-                leftIcon={<User size={16} />}
-                value={regName}
-                onChange={(e) => setRegName(e.target.value)}
-              />
-
-              <Input
-                label="Mobile Number"
-                placeholder="9876543210"
-                leftAddon="+91"
-                value={regMobile}
-                onChange={(e) => setRegMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                inputMode="numeric"
-              />
-
-              <Input
-                label="Email Address"
-                type="email"
-                placeholder="you@example.com"
-                leftIcon={<Mail size={16} />}
-                value={regEmail}
-                onChange={(e) => setRegEmail(e.target.value)}
-              />
-
-              <div>
-                <Input
-                  label="Password"
-                  type={showRegPwd ? "text" : "password"}
-                  placeholder="Create a strong password"
-                  leftIcon={<Lock size={16} />}
-                  value={regPwd}
-                  onChange={(e) => setRegPwd(e.target.value)}
-                  rightIcon={
-                    <button type="button" onClick={() => setShowRegPwd(!showRegPwd)}>
-                      {showRegPwd ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  }
-                />
+              <div className="input-wrap">
+                <label className="input-label">Password</label>
+                <div className="input-icon-wrap">
+                  <span className="icon-left">🔒</span>
+                  <input
+                    className="input"
+                    type={showRegPwd ? "text" : "password"}
+                    placeholder="Create a strong password"
+                    value={regPwd}
+                    onChange={(e) => setRegPwd(e.target.value)}
+                  />
+                  <span className="icon-right" onClick={() => setShowRegPwd(!showRegPwd)}>{showRegPwd ? "🙈" : "👁"}</span>
+                </div>
                 <PasswordStrength password={regPwd} />
               </div>
 
-              <Input
-                label="Confirm Password"
-                type={showConfirm ? "text" : "password"}
-                placeholder="Re-enter your password"
-                leftIcon={<Lock size={16} />}
-                value={regConfirm}
-                onChange={(e) => setRegConfirm(e.target.value)}
-                rightIcon={
-                  <button type="button" onClick={() => setShowConfirm(!showConfirm)}>
-                    {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                }
-              />
-
-              <label className="flex items-start gap-2.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={agreed}
-                  onChange={(e) => setAgreed(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded border-border accent-primary"
-                />
-                <span className="text-sm text-muted leading-snug">
-                  I agree to the{" "}
-                  <a href="#" className="text-primary hover:underline font-medium">Terms of Service</a>{" "}
-                  and{" "}
-                  <a href="#" className="text-primary hover:underline font-medium">Privacy Policy</a>
-                </span>
-              </label>
-
-              <Button type="submit" variant="primary" fullWidth size="lg" disabled={regLoading || !agreed}>
-                {regLoading
-                  ? <Loader2 size={16} className="animate-spin" />
-                  : <><span>Create Account</span> <ArrowRight size={16} /></>
-                }
-              </Button>
-
-              <div className="relative flex items-center gap-3">
-                <div className="flex-1 h-px bg-border" />
-                <span className="text-xs text-muted">or</span>
-                <div className="flex-1 h-px bg-border" />
+              <div className="input-wrap">
+                <label className="input-label">Confirm Password</label>
+                <div className="input-icon-wrap">
+                  <span className="icon-left">🔒</span>
+                  <input
+                    className="input"
+                    type={showConfirm ? "text" : "password"}
+                    placeholder="Repeat your password"
+                    value={regConfirm}
+                    onChange={(e) => setRegConfirm(e.target.value)}
+                  />
+                  <span className="icon-right" onClick={() => setShowConfirm(!showConfirm)}>{showConfirm ? "🙈" : "👁"}</span>
+                </div>
               </div>
 
-              <GoogleButton label="Sign up with Google" />
-            </form>
-          )}
+              <div className="checkbox-row">
+                <input type="checkbox" className="checkbox-custom" id="termsCheck" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+                <label htmlFor="termsCheck" style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+                  I agree to the <a href="#" className="link">Terms of Service</a> and <a href="#" className="link">Privacy Policy</a>
+                </label>
+              </div>
 
-          <p className="text-center text-sm text-muted mt-6">
-            {tab === "login" ? (
-              <>Don&apos;t have an account?{" "}
-                <button onClick={() => { setTab("register"); setLoginError(""); }} className="text-primary font-semibold hover:underline">
-                  Sign up free
-                </button>
-              </>
-            ) : (
-              <>Already have an account?{" "}
-                <button onClick={() => { setTab("login"); setRegError(""); }} className="text-primary font-semibold hover:underline">
-                  Sign in
-                </button>
-              </>
-            )}
-          </p>
-        </div>
+              <button type="submit" className="btn btn-primary btn-full" style={{ height: 48, marginTop: 4 }} disabled={regLoading}>
+                {regLoading ? "Creating…" : "Create Account →"}
+              </button>
+            </div>
+
+            <div className="divider-text">or sign up with</div>
+            <button type="button" className="social-btn-full" onClick={handleGoogleSignIn}>
+              <span style={{ fontSize: 18 }}>G</span> Continue with Google
+            </button>
+
+            <div style={{ textAlign: "center", marginTop: 20, fontSize: 14, color: "var(--text-muted)" }}>
+              Already have an account?{" "}
+              <a href="#" className="link" onClick={(e) => { e.preventDefault(); setTab("login"); }}>Sign In</a>
+            </div>
+          </form>
+        ) : (
+          <form onSubmit={handleLogin}>
+            <div style={{ fontSize: 22, fontWeight: 700, textAlign: "center", marginBottom: 6 }}>Welcome back</div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", marginBottom: 24 }}>Sign in to your SmartGov account</div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {loginError && <ErrorBanner msg={loginError} />}
+
+              <div className="input-wrap">
+                <label className="input-label">Mobile / Email</label>
+                <div className="input-icon-wrap">
+                  <span className="icon-left">📱</span>
+                  <input className="input" type="text" placeholder="Mobile number or email" value={loginId} onChange={(e) => setLoginId(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="input-wrap">
+                <div className="forgot-row">
+                  <label className="input-label">Password</label>
+                  <a href="#" className="link" style={{ fontSize: 12 }}>Forgot Password?</a>
+                </div>
+                <div className="input-icon-wrap">
+                  <span className="icon-left">🔒</span>
+                  <input
+                    className="input"
+                    type={showLoginPwd ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={loginPwd}
+                    onChange={(e) => setLoginPwd(e.target.value)}
+                  />
+                  <span className="icon-right" onClick={() => setShowLoginPwd(!showLoginPwd)}>{showLoginPwd ? "🙈" : "👁"}</span>
+                </div>
+              </div>
+
+              <button type="submit" className="btn btn-primary btn-full" style={{ height: 48 }} disabled={loginLoading}>
+                {loginLoading ? "Signing in…" : "Sign In →"}
+              </button>
+            </div>
+
+            <div className="divider-text">or continue with</div>
+            <button type="button" className="social-btn-full" onClick={handleGoogleSignIn}>
+              <span style={{ fontSize: 18 }}>G</span> Continue with Google
+            </button>
+
+            <div style={{ textAlign: "center", marginTop: 20, fontSize: 14, color: "var(--text-muted)" }}>
+              Don&apos;t have an account?{" "}
+              <a href="#" className="link" onClick={(e) => { e.preventDefault(); setTab("register"); }}>Get Started</a>
+            </div>
+          </form>
+        )}
+      </div>
+
+      <div style={{ position: "fixed", bottom: 20, right: 20 }}>
+        <button className="btn btn-secondary" onClick={toggleTheme}>🌙</button>
       </div>
 
       <OTPModal

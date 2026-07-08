@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     daily_scrape_hour: int = 2
     daily_scrape_minute: int = 0
 
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "llama3.2:latest"
+    storage_dir: str = "./storage/documents"
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

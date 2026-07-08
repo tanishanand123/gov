@@ -1,303 +1,294 @@
 "use client";
 
-import React, { useState } from "react";
-import {
-  Upload,
-  FileText,
-  CheckCircle2,
-  AlertTriangle,
-  Trash2,
-  Eye,
-  RefreshCw,
-  Plus,
-} from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
-import { ProgressBar } from "@/components/ui/ProgressBar";
-import { Modal } from "@/components/ui/Modal";
+import React, { useEffect, useState, useCallback } from "react";
+import { useSession } from "next-auth/react";
+import { api, documentFileUrl, type BackendDocument } from "@/lib/api";
 
-type DocStatus = "verified" | "expired" | "missing" | "pending";
+type UiStatus = "verified" | "missing" | "processing" | "failed";
 
 interface DocCard {
   id: string;
   name: string;
-  status: DocStatus;
+  icon: string;
+  status: UiStatus;
+  backendId?: number;
   uploadedOn?: string;
-  expiresOn?: string;
   fileSize?: string;
-  extractedData?: Record<string, string>;
+  extractedData?: Record<string, string> | null;
+  mimeType?: string | null;
+  needsReview?: boolean;
 }
 
-const documents: DocCard[] = [
-  {
-    id: "aadhaar",
-    name: "Aadhaar Card",
-    status: "verified",
-    uploadedOn: "15 Oct 2025",
-    expiresOn: "N/A",
-    fileSize: "1.2 MB",
-    extractedData: { "Aadhaar Number": "XXXX XXXX 4521", "Name": "Rajan Kumar", "DOB": "15/04/1991", "Address": "Nashik, Maharashtra" },
-  },
-  {
-    id: "pan",
-    name: "PAN Card",
-    status: "verified",
-    uploadedOn: "15 Oct 2025",
-    fileSize: "0.8 MB",
-    extractedData: { "PAN Number": "ABCDE1234F", "Name": "RAJAN KUMAR" },
-  },
-  {
-    id: "bank",
-    name: "Bank Passbook",
-    status: "verified",
-    uploadedOn: "20 Oct 2025",
-    fileSize: "2.1 MB",
-    extractedData: { "Account No.": "XXXXXXXXX1234", "Bank": "State Bank of India", "IFSC": "SBIN0001234" },
-  },
-  {
-    id: "bpl",
-    name: "BPL Ration Card",
-    status: "verified",
-    uploadedOn: "12 Oct 2025",
-    fileSize: "1.5 MB",
-    extractedData: { "Card No.": "MH-12345-BPL", "Category": "Below Poverty Line" },
-  },
-  {
-    id: "income",
-    name: "Income Certificate",
-    status: "missing",
-  },
-  {
-    id: "caste",
-    name: "Caste Certificate",
-    status: "missing",
-  },
-  {
-    id: "land",
-    name: "Land Records (7/12)",
-    status: "expired",
-    uploadedOn: "5 Jan 2025",
-    expiresOn: "5 Jan 2026",
-    fileSize: "3.2 MB",
-  },
+const DOC_CATALOG: { id: string; name: string; icon: string }[] = [
+  { id: "aadhaar", name: "Aadhaar Card", icon: "🪪" },
+  { id: "pan", name: "PAN Card", icon: "🪪" },
+  { id: "bank", name: "Bank Passbook", icon: "💰" },
+  { id: "bpl", name: "BPL Ration Card", icon: "🍚" },
+  { id: "income", name: "Income Certificate", icon: "💰" },
+  { id: "caste", name: "Caste Certificate", icon: "🏛" },
+  { id: "land", name: "Land Records (7/12)", icon: "🌾" },
 ];
 
-const statusConfig = {
-  verified: {
-    border: "border-success",
-    bg: "bg-green-50",
-    icon: <CheckCircle2 size={16} className="text-success" />,
-    badge: "verified" as const,
-    badgeLabel: "Verified",
-  },
-  expired: {
-    border: "border-amber-400",
-    bg: "bg-amber-50",
-    icon: <AlertTriangle size={16} className="text-amber-500" />,
-    badge: "expired" as const,
-    badgeLabel: "Expired",
-  },
-  missing: {
-    border: "border-dashed border-slate-300",
-    bg: "bg-slate-50",
-    icon: <Plus size={16} className="text-muted" />,
-    badge: "missing" as const,
-    badgeLabel: "Not Uploaded",
-  },
-  pending: {
-    border: "border-primary",
-    bg: "bg-indigo-50",
-    icon: <RefreshCw size={16} className="text-primary animate-spin" />,
-    badge: "processing" as const,
-    badgeLabel: "Processing",
-  },
-};
+function formatBytes(bytes: number) {
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
-const uploadedCount = documents.filter((d) => d.status !== "missing").length;
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function mergeDocs(backendDocs: BackendDocument[]): DocCard[] {
+  return DOC_CATALOG.map((catalogDoc) => {
+    const match = backendDocs.find((d) => d.doc_type === catalogDoc.id);
+    if (!match) {
+      return { id: catalogDoc.id, name: catalogDoc.name, icon: catalogDoc.icon, status: "missing" as UiStatus };
+    }
+    return {
+      id: catalogDoc.id,
+      name: catalogDoc.name,
+      icon: catalogDoc.icon,
+      status: match.status as UiStatus,
+      backendId: match.id,
+      uploadedOn: formatDate(match.uploaded_at),
+      fileSize: match.size_bytes ? formatBytes(match.size_bytes) : undefined,
+      extractedData: match.extracted_data,
+      mimeType: match.mime_type,
+      needsReview: match.needs_review,
+    };
+  });
+}
 
 export default function VaultPage() {
+  const { data: session } = useSession();
+  const authId = session?.user?.email || "";
+
+  const [documents, setDocuments] = useState<DocCard[]>(
+    DOC_CATALOG.map((d) => ({ id: d.id, name: d.name, icon: d.icon, status: "missing" as UiStatus }))
+  );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [uploadOpen, setUploadOpen] = useState(false);
   const [ocrOpen, setOcrOpen] = useState(false);
-  const [selectedDoc, setSelectedDoc] = useState<DocCard | null>(null);
+  const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [pickedFile, setPickedFile] = useState<File | null>(null);
+  const [docTypeId, setDocTypeId] = useState("");
+  const [uploading, setUploading] = useState(false);
 
-  const openOcr = (doc: DocCard) => {
-    setSelectedDoc(doc);
-    setOcrOpen(true);
+  const refresh = useCallback(async () => {
+    if (!authId) return;
+    try {
+      const backendDocs = await api.listDocuments(authId);
+      setDocuments(mergeDocs(backendDocs));
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load documents");
+    } finally {
+      setLoading(false);
+    }
+  }, [authId]);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional fetch-on-mount
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const uploadedCount = documents.filter((d) => d.status !== "missing").length;
+  const selectedDoc = documents.find((d) => d.id === selectedDocId) || null;
+  const pendingTargets = documents.filter((d) => d.status === "missing" || d.status === "failed");
+
+  const openUpload = (docId?: string) => {
+    setDocTypeId(docId ?? "");
+    setPickedFile(null);
+    setUploadOpen(true);
   };
 
+  const handleFile = (file: File | null) => { if (file) setPickedFile(file); };
+
+  const handleUpload = async () => {
+    if (!docTypeId || !pickedFile || !authId) return;
+    setUploading(true);
+    try {
+      await api.uploadDocument(authId, docTypeId, pickedFile);
+      await refresh();
+      setUploadOpen(false);
+      setSelectedDocId(docTypeId);
+      setOcrOpen(true);
+      setPickedFile(null);
+      setDocTypeId("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDelete = async (doc: DocCard) => {
+    if (!doc.backendId) return;
+    try {
+      await api.deleteDocument(doc.backendId);
+      await refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Delete failed");
+    }
+  };
+
+  if (!authId) {
+    return <div className="card" style={{ textAlign: "center", color: "var(--text-muted)" }}>Sign in to view your document vault.</div>;
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h1 className="text-2xl font-extrabold text-text">Document Vault</h1>
-          <p className="text-muted text-sm mt-1">Securely store all your government documents</p>
+          <h1>Document Vault</h1>
+          <div style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>{uploadedCount} of {documents.length} documents uploaded</div>
+          <div className="progress-wrap mt-2" style={{ width: 200, marginTop: 8 }}>
+            <div className="progress-bar" style={{ width: `${(uploadedCount / documents.length) * 100}%` }} />
+          </div>
         </div>
-        <Button
-          variant="primary"
-          leftIcon={<Upload size={16} />}
-          onClick={() => setUploadOpen(true)}
-        >
-          Upload Document
-        </Button>
+        <button className="btn btn-primary" onClick={() => openUpload()}>+ Upload Document</button>
       </div>
 
-      {/* Progress */}
-      <div className="card-base p-5">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-semibold text-text">Documents Uploaded</span>
-          <span className="text-sm font-bold text-primary">{uploadedCount}/{documents.length}</span>
-        </div>
-        <ProgressBar value={uploadedCount} max={documents.length} showLabel size="md" />
-        <p className="text-xs text-muted mt-2">
-          {documents.length - uploadedCount} documents still needed to unlock all schemes.
-        </p>
-      </div>
+      {error && (
+        <div style={{ background: "#FEE2E2", color: "#DC2626", borderRadius: 10, padding: "10px 14px", fontSize: 13, marginBottom: 16 }}>{error}</div>
+      )}
 
-      {/* Document grid */}
-      <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        {documents.map((doc) => {
-          const config = statusConfig[doc.status];
-          return (
-            <div
-              key={doc.id}
-              className={`border-2 rounded-2xl p-5 ${config.border} ${config.bg} flex flex-col gap-3`}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 bg-white rounded-xl shadow-sm flex items-center justify-center">
-                    <FileText size={18} className="text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-text">{doc.name}</p>
-                    {doc.uploadedOn && (
-                      <p className="text-xs text-muted">Uploaded {doc.uploadedOn}</p>
-                    )}
-                  </div>
+      {loading ? (
+        <div style={{ textAlign: "center", padding: "48px 0", color: "var(--text-muted)" }}>Loading documents…</div>
+      ) : (
+        <div className="grid-3">
+          {documents.map((doc) => {
+            if (doc.status === "missing") {
+              return (
+                <div key={doc.id} className="doc-card missing" style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 48, color: "var(--text-muted)", marginBottom: 8 }}>☁️</div>
+                  <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>{doc.name}</div>
+                  <div style={{ fontSize: 13, color: "#EF4444", marginBottom: 14 }}>Required for eligible schemes</div>
+                  <button className="btn btn-outline btn-sm btn-full" onClick={() => openUpload(doc.id)}>Upload</button>
                 </div>
-                <Badge variant={config.badge}>{config.badgeLabel}</Badge>
+              );
+            }
+            if (doc.status === "failed") {
+              return (
+                <div key={doc.id} className="doc-card expired">
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: "linear-gradient(135deg,#F59E0B,#D97706)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 16 }}>{doc.icon}</div>
+                    <span className="badge badge-expired">Needs Review ⚠️</span>
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>{doc.name}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 14 }}>Uploaded {doc.uploadedOn}</div>
+                  <button className="btn btn-amber btn-sm btn-full" onClick={() => openUpload(doc.id)}>Re-upload</button>
+                </div>
+              );
+            }
+            return (
+              <div key={doc.id} className="doc-card verified">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: "linear-gradient(135deg,#10B981,#059669)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 16 }}>{doc.icon}</div>
+                  <span className="badge badge-verified">Verified ✓</span>
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>{doc.name}</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Uploaded {doc.uploadedOn}</div>
+                <span style={{ fontSize: 11, background: "#DCFCE7", color: "#16A34A", padding: "3px 8px", borderRadius: 6, display: "inline-block", margin: "6px 0" }}>OCR Complete ✓</span>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 14 }}>{doc.fileSize}</div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button className="btn-icon" title="View" onClick={() => { setSelectedDocId(doc.id); setOcrOpen(true); }}>👁</button>
+                  <button className="btn-icon" title="Re-upload" onClick={() => openUpload(doc.id)}>🔄</button>
+                  <button className="btn-icon" style={{ color: "#EF4444" }} title="Delete" onClick={() => handleDelete(doc)}>🗑</button>
+                </div>
               </div>
-
-              {doc.fileSize && (
-                <p className="text-xs text-muted">{doc.fileSize}</p>
-              )}
-
-              {doc.expiresOn && doc.expiresOn !== "N/A" && (
-                <p className="text-xs text-amber-600 font-medium">Expires: {doc.expiresOn}</p>
-              )}
-
-              {doc.status === "missing" ? (
-                <Button
-                  variant="outline"
-                  fullWidth
-                  size="sm"
-                  leftIcon={<Upload size={14} />}
-                  onClick={() => setUploadOpen(true)}
-                >
-                  Upload Now
-                </Button>
-              ) : (
-                <div className="flex gap-2">
-                  {doc.extractedData && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex-1"
-                      leftIcon={<Eye size={14} />}
-                      onClick={() => openOcr(doc)}
-                    >
-                      View Data
-                    </Button>
-                  )}
-                  {doc.status === "expired" && (
-                    <Button
-                      variant="amber"
-                      size="sm"
-                      className="flex-1"
-                      leftIcon={<RefreshCw size={14} />}
-                      onClick={() => setUploadOpen(true)}
-                    >
-                      Re-upload
-                    </Button>
-                  )}
-                  <button className="w-8 h-8 flex items-center justify-center text-muted hover:text-danger transition-colors">
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Upload Modal */}
-      <Modal
-        open={uploadOpen}
-        onClose={() => setUploadOpen(false)}
-        title="Upload Document"
-        description="Supported formats: PDF, JPG, PNG (max 10 MB)"
-        size="md"
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-text mb-1.5 block">Document Type</label>
-            <select className="input-base">
+      <div className={`modal-overlay${uploadOpen ? " open" : ""}`}>
+        <div className="modal">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+            <h3 style={{ fontSize: 20, fontWeight: 600 }}>Upload Document</h3>
+            <button className="btn-icon" onClick={() => setUploadOpen(false)}>✕</button>
+          </div>
+
+          <div className="input-wrap" style={{ marginBottom: 14 }}>
+            <label className="input-label">Document Type</label>
+            <select className="input" value={docTypeId} onChange={(e) => setDocTypeId(e.target.value)}>
               <option value="">Select document type</option>
-              {documents.filter((d) => d.status === "missing" || d.status === "expired").map((d) => (
-                <option key={d.id} value={d.id}>{d.name}</option>
-              ))}
+              {pendingTargets.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
           </div>
 
-          {/* Drag & drop zone */}
-          <div
+          <label
+            className={`dropzone${dragging ? " dragover" : ""}`}
             onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
             onDragLeave={() => setDragging(false)}
-            onDrop={(e) => { e.preventDefault(); setDragging(false); }}
-            className={`border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer ${
-              dragging ? "border-primary bg-indigo-50" : "border-border hover:border-primary/50 hover:bg-bg"
-            }`}
+            onDrop={(e) => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files?.[0] ?? null); }}
           >
-            <Upload size={32} className="text-muted mx-auto mb-3" />
-            <p className="font-semibold text-text mb-1">Drag & drop your file here</p>
-            <p className="text-sm text-muted mb-4">or click to browse</p>
-            <label className="cursor-pointer">
-              <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" />
-              <span className="px-4 py-2 bg-elevated rounded-xl text-sm font-medium text-text hover:bg-border transition-colors">
-                Browse Files
-              </span>
-            </label>
+            <input type="file" style={{ display: "none" }} accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleFile(e.target.files?.[0] ?? null)} />
+            <div style={{ fontSize: 40 }}>☁️</div>
+            <div style={{ fontSize: 14, fontWeight: 500 }}>{pickedFile ? pickedFile.name : "Drag & drop or click to browse"}</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{pickedFile ? formatBytes(pickedFile.size) : "Supports PDF, JPG, PNG up to 10MB"}</div>
+          </label>
+
+          <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
+            <span style={{ fontSize: 11, border: "1px solid var(--border)", borderRadius: 6, padding: "3px 8px" }}>PDF</span>
+            <span style={{ fontSize: 11, border: "1px solid var(--border)", borderRadius: 6, padding: "3px 8px" }}>JPG</span>
+            <span style={{ fontSize: 11, border: "1px solid var(--border)", borderRadius: 6, padding: "3px 8px" }}>PNG</span>
           </div>
 
-          <Button variant="primary" fullWidth leftIcon={<Upload size={16} />}>
-            Upload & Extract Data
-          </Button>
+          <div style={{ background: "var(--surface-elevated)", borderRadius: 10, padding: 12, marginTop: 14 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>For best OCR accuracy, ensure:</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>• Clear and not blurry</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>• All 4 corners visible</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>• Right-side up, well lit</div>
+          </div>
+
+          <button
+            className="btn btn-primary btn-full mt-4"
+            style={{ marginTop: 16 }}
+            disabled={!docTypeId || !pickedFile || uploading}
+            onClick={handleUpload}
+          >
+            {uploading ? "Uploading & running OCR…" : "Upload & Extract Data"}
+          </button>
         </div>
-      </Modal>
+      </div>
 
       {/* OCR Results Modal */}
-      <Modal
-        open={ocrOpen}
-        onClose={() => setOcrOpen(false)}
-        title={selectedDoc?.name || "Document Data"}
-        description="Data auto-extracted via OCR from your document"
-        size="md"
-      >
-        {selectedDoc?.extractedData && (
-          <div className="space-y-2">
-            {Object.entries(selectedDoc.extractedData).map(([key, value]) => (
-              <div key={key} className="flex items-center justify-between py-3 border-b border-border last:border-0">
-                <span className="text-sm text-muted">{key}</span>
-                <span className="text-sm font-semibold text-text">{value}</span>
-              </div>
-            ))}
-            <Button variant="primary" fullWidth className="mt-4">
-              Use This Data for Applications
-            </Button>
+      <div className={`modal-overlay${ocrOpen ? " open" : ""}`}>
+        <div className="modal">
+          <div style={{ background: "#DCFCE7", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8, marginBottom: 20, fontSize: 14, color: "#16A34A", fontWeight: 600 }}>
+            ✅ Data extracted successfully!
           </div>
-        )}
-      </Modal>
+          <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 14 }}>{selectedDoc?.name}</h3>
+
+          {selectedDoc?.backendId && selectedDoc.mimeType?.startsWith("image/") && (
+            <img
+              src={documentFileUrl(selectedDoc.backendId)}
+              alt={selectedDoc.name}
+              style={{ width: "100%", maxHeight: 200, objectFit: "contain", borderRadius: 10, marginBottom: 14, background: "var(--surface-elevated)" }}
+            />
+          )}
+
+          {selectedDoc?.extractedData && Object.keys(selectedDoc.extractedData).length > 0 ? (
+            <table className="ocr-table">
+              <thead><tr><th>Field</th><th>Extracted Value</th></tr></thead>
+              <tbody>
+                {Object.entries(selectedDoc.extractedData).map(([key, value]) => (
+                  <tr key={key}><td>{key}</td><td style={{ fontWeight: 600 }}>{value}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p style={{ fontSize: 14, color: "var(--text-muted)" }}>No structured data could be extracted from this file.</p>
+          )}
+
+          <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+            <button className="btn btn-primary btn-full" onClick={() => setOcrOpen(false)}>Done</button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

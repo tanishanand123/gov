@@ -1,30 +1,41 @@
+"use client";
+
+import React, { useState } from "react";
+import { usePathname } from "next/navigation";
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
 
+const BREADCRUMBS: Record<string, string> = {
+  "/admin": "Dashboard",
+  "/admin/schemes": "Schemes Management",
+  "/admin/users": "User Management",
+  "/admin/verifications": "Document Queue",
+  "/admin/analytics": "Analytics",
+  "/admin/settings": "Send Notification",
+};
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const [sidebarVisible, setSidebarVisible] = useState(true);
+  const pathname = usePathname();
+  const crumb = BREADCRUMBS[pathname] || "Dashboard";
+
   return (
-    <div className="min-h-screen" style={{ background: "#0B1120" }}>
-      <AdminSidebar />
-      <main className="ml-64 min-h-screen">
-        {/* Admin topbar */}
-        <header
-          className="h-16 flex items-center justify-between px-6 border-b sticky top-0 z-10"
-          style={{ background: "#1E1B4B", borderColor: "rgba(255,255,255,0.08)" }}
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-white font-bold text-sm">SmartGov Admin</span>
-            <span className="text-xs bg-amber-400/20 text-amber-300 font-semibold px-2 py-0.5 rounded-full border border-amber-400/30">
-              Admin
-            </span>
+    <div data-theme="dark" className="app-shell locked">
+      <AdminSidebar visible={sidebarVisible} />
+      <div className="app-main">
+        <header className="admin-topbar">
+          <button className="btn-icon" style={{ color: "#fff", background: "#1E293B" }} onClick={() => setSidebarVisible((v) => !v)}>☰</button>
+          <div style={{ color: "#94A3B8", fontSize: 14 }}>Admin / {crumb}</div>
+          <div className="topbar-search" style={{ background: "#1E293B", borderColor: "#334155", maxWidth: 360 }}>
+            <span style={{ color: "#64748B" }}>🔍</span>
+            <input type="text" placeholder="Search users, schemes..." style={{ color: "#fff" }} />
           </div>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
-              AD
-            </div>
-            <span className="text-sm text-white/70">admin@gov.in</span>
+          <div className="topbar-actions" style={{ marginLeft: "auto" }}>
+            <button className="btn-icon" style={{ color: "#94A3B8", background: "#1E293B" }}>🔔</button>
+            <div className="avatar-circle">AD</div>
           </div>
         </header>
-        <div className="p-6">{children}</div>
-      </main>
+        <main className="page-content">{children}</main>
+      </div>
     </div>
   );
 }

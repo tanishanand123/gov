@@ -2,272 +2,158 @@
 
 import React from "react";
 import Link from "next/link";
-import {
-  ArrowRight,
-  Star,
-  FileText,
-  Bell,
-  CheckCircle2,
-  AlertTriangle,
-  Clock,
-  Upload,
-  TrendingUp,
-  FolderOpen,
-} from "lucide-react";
-import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
-import { ProgressBar } from "@/components/ui/ProgressBar";
+import { useSession } from "next-auth/react";
 
-const statsCards = [
+const MATCHES = [
   {
-    label: "Matched Schemes",
-    value: "12",
-    change: "+3 new this week",
-    icon: Star,
-    color: "bg-indigo-100 text-indigo-600",
-    trend: "up",
+    id: "pm-scholarship-capf",
+    cat: "cat-scholarship", catIcon: "🎓", catLabel: "Scholarship",
+    match: 92, matchColor: "green",
+    title: "PM Scholarship Scheme for Central Armed Police Forces",
+    amount: "₹25,000 / year", amountColor: "#10B981",
+    ministry: "🏛 Ministry of Home Affairs",
+    tag: "Closes Dec 31", tagBg: "#FEE2E2", tagColor: "#DC2626",
+    cta: "Apply →", ctaStyle: "primary",
   },
   {
-    label: "Documents Uploaded",
-    value: "4/7",
-    change: "3 still needed",
-    icon: FolderOpen,
-    color: "bg-cyan-100 text-cyan-600",
-    trend: "neutral",
+    id: "pm-awas-gramin",
+    cat: "cat-housing", catIcon: "🏠", catLabel: "Housing",
+    match: 78, matchColor: "amber",
+    title: "PM Awas Yojana — Gramin",
+    amount: "₹1,20,000 housing grant", amountColor: "#F59E0B",
+    ministry: "🏛 Ministry of Rural Development",
+    tag: "Upload to Unlock", tagBg: "#FEF9C3", tagColor: "#CA8A04",
+    cta: "Unlock →", ctaStyle: "amber",
   },
   {
-    label: "Applications",
-    value: "2",
-    change: "1 in review",
-    icon: FileText,
-    color: "bg-green-100 text-green-600",
-    trend: "up",
-  },
-  {
-    label: "Alerts",
-    value: "3",
-    change: "Action required",
-    icon: Bell,
-    color: "bg-amber-100 text-amber-600",
-    trend: "alert",
-  },
-];
-
-const topSchemes = [
-  {
-    id: "pm-awas",
-    name: "PM Awas Yojana",
-    ministry: "Ministry of Housing",
-    category: "Housing",
-    match: 94,
-    benefit: "₹2.5L subsidy",
-    badge: "eligible" as const,
-    badgeLabel: "94% Match",
+    id: "ayushman-bharat",
+    cat: "cat-health", catIcon: "❤️", catLabel: "Healthcare",
+    match: 85, matchColor: "green",
+    title: "Ayushman Bharat PM-JAY Health Cover",
+    amount: "₹5,00,000 / year health cover", amountColor: "#10B981",
+    ministry: "🏛 Ministry of Health",
+    tag: "Open", tagBg: "#FEE2E2", tagColor: "#DC2626",
+    cta: "Apply →", ctaStyle: "primary",
   },
   {
     id: "pm-kisan",
-    name: "PM Kisan Samman Nidhi",
-    ministry: "Ministry of Agriculture",
-    category: "Agriculture",
-    match: 88,
-    benefit: "₹6,000/year",
-    badge: "eligible" as const,
-    badgeLabel: "88% Match",
-  },
-  {
-    id: "ayushman",
-    name: "Ayushman Bharat PM-JAY",
-    ministry: "Ministry of Health",
-    category: "Health",
-    match: 76,
-    benefit: "₹5L cover",
-    badge: "almost" as const,
-    badgeLabel: "76% Match",
-  },
-  {
-    id: "scholarship",
-    name: "National Scholarship Portal",
-    ministry: "Ministry of Education",
-    category: "Education",
-    match: 82,
-    benefit: "₹25,000/year",
-    badge: "eligible" as const,
-    badgeLabel: "82% Match",
+    cat: "cat-agri", catIcon: "🌾", catLabel: "Agriculture",
+    match: 88, matchColor: "green",
+    title: "PM-KISAN Samman Nidhi",
+    amount: "₹6,000 / year (3 installments)", amountColor: "#10B981",
+    ministry: "🏛 Ministry of Agriculture",
+    tag: "Open", tagBg: "#FEE2E2", tagColor: "#DC2626",
+    cta: "Apply →", ctaStyle: "primary",
   },
 ];
 
-const alerts = [
-  {
-    type: "warning" as const,
-    title: "Income Certificate Missing",
-    description: "Required for 5 of your matched schemes.",
-    action: "Upload Now",
-    href: "/dashboard/vault",
-    icon: Upload,
-    color: "border-l-amber-400 bg-amber-50",
-    iconColor: "text-amber-500",
-  },
-  {
-    type: "info" as const,
-    title: "PM Kisan Application Deadline",
-    description: "Last date to apply: December 31, 2025",
-    action: "Apply Now",
-    href: "/dashboard/schemes/pm-kisan",
-    icon: Clock,
-    color: "border-l-primary bg-indigo-50",
-    iconColor: "text-primary",
-  },
-  {
-    type: "success" as const,
-    title: "Aadhaar Verified Successfully",
-    description: "Your Aadhaar has been linked and verified.",
-    action: "View Profile",
-    href: "/dashboard/profile",
-    icon: CheckCircle2,
-    color: "border-l-success bg-green-50",
-    iconColor: "text-success",
-  },
-];
+export default function DashboardHome() {
+  const { data: session } = useSession();
+  const firstName = (session?.user?.name || "there").split(" ")[0];
 
-const missingDocs = ["Income Certificate", "Caste Certificate", "Bank Passbook"];
-
-export default function DashboardPage() {
   return (
-    <div className="space-y-6">
-      {/* Welcome banner */}
-      <div
-        className="rounded-2xl p-6 text-white relative overflow-hidden"
-        style={{ background: "linear-gradient(135deg, #4F46E5 0%, #6366F1 60%, #06B6D4 100%)" }}
-      >
-        <div className="absolute inset-0 bg-white/5 rounded-2xl" />
-        <div className="relative">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-extrabold">Good morning, Rajan! 👋</h1>
-              <p className="mt-1 text-indigo-200">
-                You have <span className="text-white font-bold">3 action items</span> waiting for you today.
-              </p>
-            </div>
-            <div className="hidden sm:block text-right">
-              <div className="text-3xl font-extrabold">12</div>
-              <div className="text-indigo-200 text-sm">Schemes Matched</div>
-            </div>
-          </div>
-          <div className="mt-4 flex gap-3">
-            <Link href="/dashboard/schemes">
-              <Button variant="secondary" size="sm" pill rightIcon={<ArrowRight size={14} />}>
-                View Schemes
-              </Button>
-            </Link>
-            <Link href="/dashboard/vault">
-              <Button size="sm" pill className="bg-white/20 text-white hover:bg-white/30 border-0">
-                Upload Docs
-              </Button>
-            </Link>
-          </div>
+    <div>
+      {/* Welcome Banner */}
+      <div className="welcome-banner">
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 600, marginBottom: 6 }}>Good morning, {firstName}! 👋</div>
+          <div style={{ opacity: 0.9, fontSize: 14 }}>You have <strong>3 new eligible schemes</strong> and <strong>1 document expiring soon</strong>.</div>
+        </div>
+        <div style={{ fontSize: 80, opacity: 0.2, position: "absolute", right: 32, top: 10 }}>🏛</div>
+      </div>
+
+      {/* Profile Completion */}
+      <div className="card card-sm flex items-center justify-between" style={{ marginBottom: 20 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>Complete your profile</div>
+          <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 10 }}>72% complete — add Caste Certificate to unlock 3 more schemes</div>
+          <div className="progress-wrap"><div className="progress-bar" style={{ width: "72%" }} /></div>
+        </div>
+        <Link href="/dashboard/profile" className="btn btn-outline btn-sm" style={{ marginLeft: 20, whiteSpace: "nowrap" }}>Complete Now →</Link>
+      </div>
+
+      {/* Stats Row */}
+      <div className="stats-grid" style={{ marginBottom: 24 }}>
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: "linear-gradient(135deg,#6366F1,#4338CA)" }}>🎯</div>
+          <div className="stat-value gradient-text">12</div>
+          <div className="stat-label">Eligible Schemes</div>
+          <div className="stat-delta" style={{ color: "#10B981" }}>+3 new this week</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: "linear-gradient(135deg,#06B6D4,#0891B2)" }}>📄</div>
+          <div className="stat-value" style={{ color: "#06B6D4" }}>4/7</div>
+          <div className="stat-label">Documents Uploaded</div>
+          <div className="stat-delta" style={{ color: "#F59E0B" }}>3 missing</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: "linear-gradient(135deg,#10B981,#059669)" }}>✅</div>
+          <div className="stat-value" style={{ color: "#10B981" }}>2</div>
+          <div className="stat-label">Applications Submitted</div>
+          <div className="stat-delta" style={{ color: "var(--text-muted)" }}>1 in review</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: "linear-gradient(135deg,#F87171,#EF4444)" }}>⚠️</div>
+          <div className="stat-value" style={{ color: "#EF4444" }}>3</div>
+          <div className="stat-label">Action Required</div>
+          <div className="stat-delta"><Link className="link" href="/dashboard/notifications">View alerts →</Link></div>
         </div>
       </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {statsCards.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={stat.label} className="hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.color}`}>
-                  <Icon size={18} />
-                </div>
-                {stat.trend === "up" && <TrendingUp size={14} className="text-success" />}
-                {stat.trend === "alert" && <AlertTriangle size={14} className="text-amber-500" />}
-              </div>
-              <div className="text-2xl font-extrabold text-text">{stat.value}</div>
-              <div className="text-sm text-muted mt-0.5">{stat.label}</div>
-              <div className="text-xs text-muted mt-1">{stat.change}</div>
-            </Card>
-          );
-        })}
+      {/* Top Matches */}
+      <div className="section-header">
+        <div className="section-title">Your Top Matches</div>
+        <Link className="link" style={{ fontSize: 13 }} href="/dashboard/schemes">View All →</Link>
       </div>
-
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Profile completion */}
-        <Card className="lg:col-span-1">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-text">Profile Completion</h2>
-            <span className="text-sm font-bold text-primary">72%</span>
-          </div>
-          <ProgressBar value={72} showLabel />
-          <p className="text-xs text-muted mt-3 mb-4">
-            Complete your profile to unlock more scheme matches.
-          </p>
-          <div className="space-y-2">
-            {missingDocs.map((doc) => (
-              <div key={doc} className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2 text-muted">
-                  <div className="w-4 h-4 rounded border-2 border-dashed border-muted" />
-                  {doc}
-                </div>
-                <Button variant="ghost" size="sm" className="h-7 text-xs">Add</Button>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        {/* Top scheme matches */}
-        <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-text">Top Matches</h2>
-            <Link href="/dashboard/schemes" className="text-sm text-primary font-medium hover:underline flex items-center gap-1">
-              View all <ArrowRight size={14} />
-            </Link>
-          </div>
-          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-            {topSchemes.map((scheme) => (
-              <Link key={scheme.id} href={`/dashboard/schemes/${scheme.id}`} className="block shrink-0 w-64">
-                <div className="card-base p-5 hover:shadow-md transition-all hover:-translate-y-0.5 cursor-pointer">
-                  <div className="flex items-start justify-between mb-3">
-                    <Badge variant={scheme.badge}>{scheme.badgeLabel}</Badge>
-                    <ProgressBar value={scheme.match} size="sm" className="w-16 mt-1.5" />
-                  </div>
-                  <h3 className="font-bold text-sm text-text mb-1">{scheme.name}</h3>
-                  <p className="text-xs text-muted mb-3">{scheme.ministry}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-primary">{scheme.benefit}</span>
-                    <Badge variant="default" className="text-xs">{scheme.category}</Badge>
-                  </div>
-                </div>
+      <div className="hscroll" style={{ marginBottom: 24 }}>
+        {MATCHES.map((m) => (
+          <div key={m.id} className={`scheme-card ${m.matchColor === "green" ? "eligible" : "almost"}`}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <span className={`category-chip ${m.cat}`}>{m.catIcon} {m.catLabel}</span>
+              <span className="badge" style={{ background: m.matchColor === "green" ? "linear-gradient(135deg,#10B981,#059669)" : "linear-gradient(135deg,#F59E0B,#D97706)", color: "#fff", borderRadius: 50, fontSize: 11 }}>{m.match}% match</span>
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4, lineHeight: 1.3 }}>{m.title}</div>
+            <div style={{ fontSize: 14, color: m.amountColor, fontWeight: 600, marginBottom: 4 }}>{m.amount}</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>{m.ministry}</div>
+            <div className="progress-wrap" style={{ marginBottom: 10 }}><div className={`progress-bar ${m.matchColor}`} style={{ width: `${m.match}%`, height: 6 }} /></div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 11, background: m.tagBg, color: m.tagColor, padding: "3px 8px", borderRadius: 6 }}>{m.tag}</span>
+              <Link href={`/dashboard/schemes/${m.id}`} className={`btn btn-sm ${m.ctaStyle === "primary" ? "btn-primary" : ""}`} style={m.ctaStyle === "amber" ? { background: "linear-gradient(135deg,#F59E0B,#D97706)", color: "#fff" } : undefined}>
+                {m.cta}
               </Link>
-            ))}
+            </div>
           </div>
-        </div>
+        ))}
       </div>
 
       {/* Alerts */}
-      <div>
-        <h2 className="font-bold text-text mb-4">Action Required</h2>
-        <div className="space-y-3">
-          {alerts.map((alert) => {
-            const Icon = alert.icon;
-            return (
-              <div
-                key={alert.title}
-                className={`border-l-4 rounded-xl p-4 flex items-start justify-between gap-4 ${alert.color}`}
-              >
-                <div className="flex items-start gap-3">
-                  <Icon size={18} className={`shrink-0 mt-0.5 ${alert.iconColor}`} />
-                  <div>
-                    <p className="text-sm font-semibold text-text">{alert.title}</p>
-                    <p className="text-xs text-muted mt-0.5">{alert.description}</p>
-                  </div>
-                </div>
-                <Link href={alert.href}>
-                  <Button variant="outline" size="sm">{alert.action}</Button>
-                </Link>
-              </div>
-            );
-          })}
+      <div className="section-title" style={{ marginBottom: 16 }}>Action Required</div>
+      <div className="alert-item warn">
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: "#FEF3C7", display: "flex", alignItems: "center", justifyContent: "center" }}>⚠️</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>Aadhaar Card expiring soon</div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Valid until Jan 2027 — renew to keep 4 schemes active</div>
         </div>
+        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>2 days ago</div>
+        <span style={{ color: "var(--text-muted)" }}>›</span>
+      </div>
+      <div className="alert-item danger">
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: "#FEE2E2", display: "flex", alignItems: "center", justifyContent: "center" }}>📄</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>Caste Certificate missing</div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Required for PM Scholarship — blocks ₹25,000 benefit</div>
+        </div>
+        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>1 week ago</div>
+        <span style={{ color: "var(--text-muted)" }}>›</span>
+      </div>
+      <div className="alert-item info">
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: "#EEF2FF", display: "flex", alignItems: "center", justifyContent: "center" }}>🆕</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>3 new schemes matched your profile</div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Digital Skill India, MNREGA, and 1 more added</div>
+        </div>
+        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Today</div>
+        <span style={{ color: "var(--text-muted)" }}>›</span>
       </div>
     </div>
   );
