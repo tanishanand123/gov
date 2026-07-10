@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toggleTheme } from "@/lib/theme";
+import { Menu, Search, Bell, Moon } from "lucide-react";
 
 const BREADCRUMBS: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -34,17 +35,18 @@ export function Topbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
   return (
     <header className="topbar">
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <button className="btn-icon" onClick={onToggleSidebar}>☰</button>
+        <button className="btn-icon" onClick={onToggleSidebar}><Menu size={18} strokeWidth={2} /></button>
         <span style={{ fontSize: 14, color: "var(--text-muted)" }}>SmartGov / {crumb}</span>
       </div>
       <div className="topbar-search">
-        <span>🔍</span>
+        <Search size={16} strokeWidth={2} />
         <input type="text" placeholder="Search schemes, documents..." />
       </div>
       <div className="topbar-actions">
-        <button className="btn-icon" title="Language">🌐</button>
-        <Link href="/dashboard/notifications" className="btn-icon notif-badge" title="Notifications" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>🔔</Link>
-        <button className="btn-icon" onClick={toggleTheme} title="Toggle theme">🌙</button>
+        <Link href="/dashboard/notifications" className="btn-icon notif-badge" title="Notifications" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+          <Bell size={18} strokeWidth={2} />
+        </Link>
+        <button className="btn-icon" onClick={toggleTheme} title="Toggle theme"><Moon size={18} strokeWidth={2} /></button>
         <Link href="/dashboard/profile" className="avatar-circle" style={{ cursor: "pointer", textDecoration: "none" }}>
           {mounted ? initials : ""}
         </Link>

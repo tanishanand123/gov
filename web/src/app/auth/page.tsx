@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { toggleTheme } from "@/lib/theme";
+import { STOCK_PHOTOS, photoUrl } from "@/lib/constants";
+import { Smartphone, User, Mail, Lock, Eye, EyeOff, Moon } from "lucide-react";
 
 type Tab = "login" | "register";
 
@@ -113,7 +115,7 @@ function OTPModal({
   return (
     <div className={`modal-overlay${open ? " open" : ""}`}>
       <div className="modal otp-modal">
-        <div style={{ textAlign: "center", marginBottom: 6, fontSize: 40 }}>📱</div>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 6, color: "var(--primary)" }}><Smartphone size={36} strokeWidth={1.5} /></div>
         <h3>Verify your mobile</h3>
         <div className="sub">
           Enter the 6-digit OTP sent to<br /><strong>+91-{mobile}</strong>
@@ -264,7 +266,14 @@ export default function AuthPage() {
         <Link href="/" className="back-link">← Back to Home</Link>
       </div>
 
-      <div className="auth-card">
+      <div className="auth-split">
+        <div className="auth-image-panel" style={{ backgroundImage: `url(${photoUrl(STOCK_PHOTOS.womanFarmerRice, 900)})` }}>
+          <div className="auth-image-panel-text">
+            <h3>Every scheme you deserve, effortlessly.</h3>
+            <p>Join 10,000+ citizens across India already claiming their benefits.</p>
+          </div>
+        </div>
+        <div className="auth-card">
         <div className="text-center" style={{ marginBottom: 20 }}>
           <div style={{ fontSize: 28, fontWeight: 900 }} className="gradient-text-cyan">SmartGov</div>
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>Assist • Govt Welfare Platform</div>
@@ -287,7 +296,7 @@ export default function AuthPage() {
               <div className="input-wrap">
                 <label className="input-label">Full Name</label>
                 <div className="input-icon-wrap">
-                  <span className="icon-left">👤</span>
+                  <span className="icon-left"><User size={16} strokeWidth={2} /></span>
                   <input className="input" type="text" placeholder="Rahul Kumar" value={regName} onChange={(e) => setRegName(e.target.value)} />
                 </div>
               </div>
@@ -310,7 +319,7 @@ export default function AuthPage() {
               <div className="input-wrap">
                 <label className="input-label">Email Address</label>
                 <div className="input-icon-wrap">
-                  <span className="icon-left">✉️</span>
+                  <span className="icon-left"><Mail size={16} strokeWidth={2} /></span>
                   <input className="input" type="email" placeholder="rahul@example.com" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} />
                 </div>
               </div>
@@ -318,7 +327,7 @@ export default function AuthPage() {
               <div className="input-wrap">
                 <label className="input-label">Password</label>
                 <div className="input-icon-wrap">
-                  <span className="icon-left">🔒</span>
+                  <span className="icon-left"><Lock size={16} strokeWidth={2} /></span>
                   <input
                     className="input"
                     type={showRegPwd ? "text" : "password"}
@@ -326,7 +335,7 @@ export default function AuthPage() {
                     value={regPwd}
                     onChange={(e) => setRegPwd(e.target.value)}
                   />
-                  <span className="icon-right" onClick={() => setShowRegPwd(!showRegPwd)}>{showRegPwd ? "🙈" : "👁"}</span>
+                  <span className="icon-right" onClick={() => setShowRegPwd(!showRegPwd)}>{showRegPwd ? <EyeOff size={16} strokeWidth={2} /> : <Eye size={16} strokeWidth={2} />}</span>
                 </div>
                 <PasswordStrength password={regPwd} />
               </div>
@@ -334,7 +343,7 @@ export default function AuthPage() {
               <div className="input-wrap">
                 <label className="input-label">Confirm Password</label>
                 <div className="input-icon-wrap">
-                  <span className="icon-left">🔒</span>
+                  <span className="icon-left"><Lock size={16} strokeWidth={2} /></span>
                   <input
                     className="input"
                     type={showConfirm ? "text" : "password"}
@@ -342,7 +351,7 @@ export default function AuthPage() {
                     value={regConfirm}
                     onChange={(e) => setRegConfirm(e.target.value)}
                   />
-                  <span className="icon-right" onClick={() => setShowConfirm(!showConfirm)}>{showConfirm ? "🙈" : "👁"}</span>
+                  <span className="icon-right" onClick={() => setShowConfirm(!showConfirm)}>{showConfirm ? <EyeOff size={16} strokeWidth={2} /> : <Eye size={16} strokeWidth={2} />}</span>
                 </div>
               </div>
 
@@ -379,7 +388,7 @@ export default function AuthPage() {
               <div className="input-wrap">
                 <label className="input-label">Mobile / Email</label>
                 <div className="input-icon-wrap">
-                  <span className="icon-left">📱</span>
+                  <span className="icon-left"><Smartphone size={16} strokeWidth={2} /></span>
                   <input className="input" type="text" placeholder="Mobile number or email" value={loginId} onChange={(e) => setLoginId(e.target.value)} />
                 </div>
               </div>
@@ -390,7 +399,7 @@ export default function AuthPage() {
                   <a href="#" className="link" style={{ fontSize: 12 }}>Forgot Password?</a>
                 </div>
                 <div className="input-icon-wrap">
-                  <span className="icon-left">🔒</span>
+                  <span className="icon-left"><Lock size={16} strokeWidth={2} /></span>
                   <input
                     className="input"
                     type={showLoginPwd ? "text" : "password"}
@@ -398,7 +407,7 @@ export default function AuthPage() {
                     value={loginPwd}
                     onChange={(e) => setLoginPwd(e.target.value)}
                   />
-                  <span className="icon-right" onClick={() => setShowLoginPwd(!showLoginPwd)}>{showLoginPwd ? "🙈" : "👁"}</span>
+                  <span className="icon-right" onClick={() => setShowLoginPwd(!showLoginPwd)}>{showLoginPwd ? <EyeOff size={16} strokeWidth={2} /> : <Eye size={16} strokeWidth={2} />}</span>
                 </div>
               </div>
 
@@ -418,10 +427,11 @@ export default function AuthPage() {
             </div>
           </form>
         )}
+        </div>
       </div>
 
       <div style={{ position: "fixed", bottom: 20, right: 20 }}>
-        <button className="btn btn-secondary" onClick={toggleTheme}>🌙</button>
+        <button className="btn btn-secondary" onClick={toggleTheme}><Moon size={16} strokeWidth={2} /></button>
       </div>
 
       <OTPModal

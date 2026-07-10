@@ -3,22 +3,26 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { toggleTheme, getTheme } from "@/lib/theme";
+import { STOCK_PHOTOS, photoUrl } from "@/lib/constants";
+import {
+  Sun, Moon, Play, Star, Landmark, Target, FolderArchive, Zap, Bell, Globe, Link2,
+} from "lucide-react";
 
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
-  const [themeLabel, setThemeLabel] = useState("☀️ Light");
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", onScroll);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reads client-only document.documentElement
-    setThemeLabel(getTheme() === "dark" ? "🌙 Dark" : "☀️ Light");
+    setIsDark(getTheme() === "dark");
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const handleToggleTheme = () => {
     toggleTheme();
-    setThemeLabel(getTheme() === "dark" ? "🌙 Dark" : "☀️ Light");
+    setIsDark(getTheme() === "dark");
   };
 
   return (
@@ -33,7 +37,9 @@ export default function LandingPage() {
           <a href="#languages">Languages</a>
         </div>
         <div className="nav-cta">
-          <button className="theme-toggle" onClick={handleToggleTheme}>{themeLabel}</button>
+          <button className="theme-toggle" onClick={handleToggleTheme} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            {isDark ? <Moon size={14} strokeWidth={2} /> : <Sun size={14} strokeWidth={2} />} {isDark ? "Dark" : "Light"}
+          </button>
           <Link href="/auth" className="btn btn-outline">Login</Link>
           <Link href="/auth" className="btn btn-primary btn-pill">Get Started</Link>
         </div>
@@ -54,18 +60,28 @@ export default function LandingPage() {
           <p className="hero-sub">One profile. One vault. Auto-apply to 500+ government welfare schemes.</p>
           <div className="hero-cta-row">
             <Link href="/auth" className="btn btn-primary btn-pill btn-lg">Get Started Free</Link>
-            <button className="btn btn-outline btn-pill btn-lg" onClick={() => alert("Demo video coming soon! 🎬")}>▶ Watch Demo</button>
+            <button className="btn btn-outline btn-pill btn-lg" onClick={() => alert("Demo video coming soon! 🎬")} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <Play size={14} strokeWidth={2} fill="currentColor" /> Watch Demo
+            </button>
           </div>
           <div className="hero-trust">
-            ⭐⭐⭐⭐⭐ &nbsp;Trusted by <strong>10,000+ citizens</strong> across India
+            <span className="trust-avatars">
+              <img src={photoUrl(STOCK_PHOTOS.womanFarmerRice, 64)} alt="" />
+              <img src={photoUrl(STOCK_PHOTOS.motherDaughter, 64)} alt="" />
+              <img src={photoUrl(STOCK_PHOTOS.girlPortraitSmiling, 64)} alt="" />
+            </span>
+            <span className="star-rating">
+              {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={13} strokeWidth={0} fill="#F59E0B" />)}
+            </span>
+            &nbsp;Trusted by <strong>10,000+ citizens</strong> across India
           </div>
         </div>
 
         <div className="hero-visual">
           <div className="phone-mockup">
             <div className="phone-screen">
-              <div className="phone-topbar">
-                🏛 SmartGov Assist &nbsp;•&nbsp; Dashboard
+              <div className="phone-topbar" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Landmark size={14} strokeWidth={2} /> SmartGov Assist &nbsp;•&nbsp; Dashboard
               </div>
               <div className="phone-body">
                 <div className="phone-stat-row">
@@ -129,15 +145,15 @@ export default function LandingPage() {
         </div>
         <div className="features-grid">
           {[
-            { icon: "🎯", bg: "linear-gradient(135deg,#6366F1,#4338CA)", title: "Eligibility Check", desc: "Auto-match your profile against 500+ schemes. Know exactly what you qualify for in seconds." },
-            { icon: "🗂", bg: "linear-gradient(135deg,#06B6D4,#0891B2)", title: "Document Vault", desc: "Upload once. We extract data via OCR and reuse across all applications — securely encrypted." },
-            { icon: "⚡", bg: "linear-gradient(135deg,#F59E0B,#D97706)", title: "Auto Form Fill", desc: "Your profile data auto-populates government forms. Apply in one click, no manual entry." },
-            { icon: "🔔", bg: "linear-gradient(135deg,#10B981,#059669)", title: "Smart Notifications", desc: "Never miss a deadline. Get alerts for new schemes, expiring docs, and application updates." },
-            { icon: "🌐", bg: "linear-gradient(135deg,#EC4899,#DB2777)", title: "Multi-language", desc: "Available in Hindi, English, Tamil, Telugu, Bengali, and 6 more Indian languages." },
-            { icon: "🔗", bg: "linear-gradient(135deg,#8B5CF6,#7C3AED)", title: "Direct Gov Links", desc: "Apply directly on official government portals. We only guide and fill — never intercept data." },
+            { icon: Target, bg: "linear-gradient(135deg,#6366F1,#4338CA)", title: "Eligibility Check", desc: "Auto-match your profile against 500+ schemes. Know exactly what you qualify for in seconds." },
+            { icon: FolderArchive, bg: "linear-gradient(135deg,#06B6D4,#0891B2)", title: "Document Vault", desc: "Upload once. We extract data via OCR and reuse across all applications — securely encrypted." },
+            { icon: Zap, bg: "linear-gradient(135deg,#F59E0B,#D97706)", title: "Auto Form Fill", desc: "Your profile data auto-populates government forms. Apply in one click, no manual entry." },
+            { icon: Bell, bg: "linear-gradient(135deg,#10B981,#059669)", title: "Smart Notifications", desc: "Never miss a deadline. Get alerts for new schemes, expiring docs, and application updates." },
+            { icon: Globe, bg: "linear-gradient(135deg,#EC4899,#DB2777)", title: "Multi-language", desc: "Available in Hindi, English, Tamil, Telugu, Bengali, and 6 more Indian languages." },
+            { icon: Link2, bg: "linear-gradient(135deg,#8B5CF6,#7C3AED)", title: "Direct Gov Links", desc: "Apply directly on official government portals. We only guide and fill — never intercept data." },
           ].map((f) => (
             <div className="feature-card" key={f.title}>
-              <div className="feature-icon" style={{ background: f.bg }}>{f.icon}</div>
+              <div className="feature-icon" style={{ background: f.bg }}><f.icon size={22} strokeWidth={2} color="#fff" /></div>
               <h3>{f.title}</h3>
               <p className="text-secondary mt-2">{f.desc}</p>
             </div>
@@ -153,16 +169,19 @@ export default function LandingPage() {
         </div>
         <div className="how-steps">
           <div className="how-step">
+            <img className="how-step-photo" src={photoUrl(STOCK_PHOTOS.motherDaughter, 500)} alt="" />
             <div className="how-step-num">1</div>
             <h3>Create Your Profile</h3>
             <p className="text-secondary mt-2">Fill your basic info, income, location, and category in under 2 minutes. One-time setup.</p>
           </div>
           <div className="how-step">
+            <img className="how-step-photo" src={photoUrl(STOCK_PHOTOS.farmerField, 500)} alt="" />
             <div className="how-step-num">2</div>
             <h3>Upload Documents Once</h3>
             <p className="text-secondary mt-2">Upload Aadhaar, income certificate, and other docs. Our OCR extracts and stores them securely.</p>
           </div>
           <div className="how-step">
+            <img className="how-step-photo" src={photoUrl(STOCK_PHOTOS.womanFarmerRice, 500)} alt="" />
             <div className="how-step-num">3</div>
             <h3>Apply with One Click</h3>
             <p className="text-secondary mt-2">Auto-filled forms. One-click submission. Track status in real time from your dashboard.</p>
@@ -171,7 +190,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <div className="cta-section">
+      <div className="cta-section" style={{ backgroundImage: `url(${photoUrl(STOCK_PHOTOS.farmerField, 1600)})` }}>
         <h2>Start claiming what&apos;s yours today</h2>
         <p>Join 10,000+ citizens who&apos;ve already claimed ₹2.3 Crore+ in benefits.</p>
         <Link href="/auth" className="cta-btn" style={{ display: "inline-block", textDecoration: "none" }}>Get Started Free →</Link>
@@ -218,7 +237,7 @@ export default function LandingPage() {
             <a href="#" className="social-btn">𝕏</a>
             <a href="#" className="social-btn">in</a>
             <a href="#" className="social-btn">f</a>
-            <a href="#" className="social-btn">▶</a>
+            <a href="#" className="social-btn"><Play size={14} strokeWidth={2} fill="currentColor" /></a>
           </div>
         </div>
       </footer>

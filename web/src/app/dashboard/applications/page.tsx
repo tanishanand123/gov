@@ -20,16 +20,23 @@ const APPS: AppRow[] = [
   { id: "4", status: "rejected", title: "Beti Bachao Beti Padhao", ministry: "WCD Ministry", appliedOn: "5 Nov 2025", submissionId: "#SGov-2025-00312", badgeLabel: "Rejected ✗", cta: "Re-apply" },
 ];
 
-const TABS = ["All (4)", "Pending (1)", "Approved (2)", "Rejected (1)"];
-
 const BADGE_CLASS: Record<AppRow["status"], string> = {
   approved: "badge-eligible",
   review: "badge-processing",
   rejected: "badge-missing",
 };
 
+const FILTERS: { key: "all" | AppRow["status"]; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "review", label: "Pending" },
+  { key: "approved", label: "Approved" },
+  { key: "rejected", label: "Rejected" },
+];
+
 export default function ApplicationsPage() {
   const [tab, setTab] = useState(0);
+  const activeKey = FILTERS[tab].key;
+  const visibleApps = activeKey === "all" ? APPS : APPS.filter((a) => a.status === activeKey);
 
   return (
     <div>
@@ -38,12 +45,22 @@ export default function ApplicationsPage() {
         <p>Track all your scheme applications</p>
       </div>
       <div className="tabs">
-        {TABS.map((t, i) => (
-          <button key={t} className={`tab${tab === i ? " active" : ""}`} onClick={() => setTab(i)}>{t}</button>
-        ))}
+        {FILTERS.map((f, i) => {
+          const count = f.key === "all" ? APPS.length : APPS.filter((a) => a.status === f.key).length;
+          return (
+            <button key={f.key} className={`tab${tab === i ? " active" : ""}`} onClick={() => setTab(i)}>
+              {f.label} ({count})
+            </button>
+          );
+        })}
       </div>
+      {visibleApps.length === 0 && (
+        <div className="card" style={{ textAlign: "center", color: "var(--text-muted)", padding: "32px 0" }}>
+          No {FILTERS[tab].label.toLowerCase()} applications.
+        </div>
+      )}
       <div>
-        {APPS.map((a) => (
+        {visibleApps.map((a) => (
           <div key={a.id} className={`app-card ${a.status}`}>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 15, fontWeight: 600 }}>{a.title}</div>

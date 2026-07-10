@@ -1,26 +1,10 @@
 [
   {
-    "id": "6f766bc3-1518-4164-be7b-43a0f0ed949b",
+    "id": "790cc001-a445-4808-b82d-9731d0513fcd",
     "name": "Test User",
-    "email": "test@example.com",
-    "mobile": "9876543210",
-    "passwordHash": "294ff98be046670d1c02ad7f46bc5d76:bd95e590f03e22f333d3e0a7d2d86e9d72aa1af6debedef678aec6178a39d902ccda67bb8a23ecd144589e1b665ccdd8b5109a7e99f1071fbf8a01a9873bf69d",
-    "createdAt": "2026-06-26T10:44:09.010Z"
-  },
-  {
-    "id": "07aa9965-7d70-4761-af1d-d8058fa72b7d",
-    "name": "Setidure Projects",
-    "email": "projects@setidure.com",
-    "mobile": "8851179779",
-    "passwordHash": "26a3a9bb3d8d4a0675f2b7ea62d2de75:0eb0b54f7d929bd31531d8d7999979f8b3ebffdc7ee3d6677e11e12509b2ba7c098a7402475e857523979e8e719f2b06ec7267fbc49a50d0d571adb5ce459c23",
-    "createdAt": "2026-06-26T10:46:15.706Z"
-  },
-  {
-    "id": "4cd688a8-eaa7-49cf-a1e4-828f2bc56395",
-    "name": "aniket",
-    "email": "meenaaniket066@gmail.com",
-    "mobile": "9599614375",
-    "passwordHash": "141c326f984248355ceb43a9728de933:2b80948316fe6a23baf22b0d48bd6db0dad85b0f80caf38f8c3bb2f57284ac933ae17baf02943ffe6874e5f98c15abb33c090673f3f0d6bf654129dd4a1e6847",
-    "createdAt": "2026-06-30T07:11:24.043Z"
+    "email": "test@smartgov.dev",
+    "mobile": "9000000001",
+    "passwordHash": "c0145aef6436cdc0009c6d113ac64fad:32f5bc8a5e084136db56f5050ab3170011537808449632e9f7bf3e8b264e94475efc642fe061b238409e64871e38100eaf734699cd4447b5b1511d6df0bd7651",
+    "createdAt": "2026-07-10T08:51:42.073Z"
   }
 ]

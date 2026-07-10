@@ -3,6 +3,13 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Sparkles, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
+
+function StatusTag({ kind }: { kind: "ok" | "warn" | "required" }) {
+  if (kind === "ok") return <span style={{ fontSize: 11, color: "#10B981", display: "inline-flex", alignItems: "center", gap: 4 }}><CheckCircle2 size={12} strokeWidth={2} /> Auto-filled</span>;
+  if (kind === "warn") return <span style={{ fontSize: 11, color: "#F59E0B", display: "inline-flex", alignItems: "center", gap: 4 }}><AlertTriangle size={12} strokeWidth={2} /> Please verify</span>;
+  return <span style={{ fontSize: 11, color: "#EF4444", display: "inline-flex", alignItems: "center", gap: 4 }}><XCircle size={12} strokeWidth={2} /> Fill required</span>;
+}
 
 export default function ApplyPage() {
   const router = useRouter();
@@ -27,55 +34,55 @@ export default function ApplyPage() {
         <p style={{ color: "var(--text-muted)", marginBottom: 20 }}>Fields highlighted in amber need your attention</p>
 
         <div style={{ background: "#EEF2FF", border: "1px solid #6366F1", borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, marginBottom: 20, fontSize: 13, color: "#4F46E5" }}>
-          ✨ <strong>8 of 11 fields auto-filled</strong> from your profile and documents
+          <Sparkles size={16} strokeWidth={2} /> <strong>8 of 11 fields auto-filled</strong> from your profile and documents
         </div>
 
         <div style={{ display: "flex", gap: 16, marginBottom: 20, fontSize: 12, color: "var(--text-muted)" }}>
-          <span>✅ Auto-filled</span>
-          <span style={{ color: "#F59E0B" }}>⚠️ Please verify</span>
-          <span style={{ color: "#EF4444" }}>❌ Fill required</span>
+          <StatusTag kind="ok" />
+          <StatusTag kind="warn" />
+          <StatusTag kind="required" />
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 24 }}>
           <div className="input-wrap">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <label className="input-label">Full Name</label>
-              <span style={{ fontSize: 11, color: "#10B981" }}>✅ Auto-filled</span>
+              <StatusTag kind="ok" />
             </div>
             <input className="input" defaultValue="Rahul Kumar" readOnly style={{ background: "var(--surface-elevated)" }} />
           </div>
           <div className="input-wrap">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <label className="input-label">Date of Birth</label>
-              <span style={{ fontSize: 11, color: "#10B981" }}>✅ Auto-filled</span>
+              <StatusTag kind="ok" />
             </div>
             <input className="input" defaultValue="01 Jan 2003" readOnly style={{ background: "var(--surface-elevated)" }} />
           </div>
           <div className="input-wrap">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <label className="input-label">Aadhaar Number</label>
-              <span style={{ fontSize: 11, color: "#F59E0B" }}>⚠️ Please verify</span>
+              <StatusTag kind="warn" />
             </div>
             <input className="input" defaultValue="XXXX XXXX 1234" style={{ borderColor: "#F59E0B", boxShadow: "0 0 0 2px rgba(245,158,11,0.15)" }} />
           </div>
           <div className="input-wrap">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <label className="input-label">Annual Income</label>
-              <span style={{ fontSize: 11, color: "#10B981" }}>✅ Auto-filled</span>
+              <StatusTag kind="ok" />
             </div>
             <input className="input" defaultValue="₹1,80,000" readOnly style={{ background: "var(--surface-elevated)" }} />
           </div>
           <div className="input-wrap">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <label className="input-label">Category</label>
-              <span style={{ fontSize: 11, color: "#10B981" }}>✅ Auto-filled</span>
+              <StatusTag kind="ok" />
             </div>
             <input className="input" defaultValue="OBC" readOnly style={{ background: "var(--surface-elevated)" }} />
           </div>
           <div className="input-wrap">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <label className="input-label">Course / Program</label>
-              <span style={{ fontSize: 11, color: "#EF4444" }}>❌ Fill required</span>
+              <StatusTag kind="required" />
             </div>
             <input
               className="input"
@@ -88,14 +95,14 @@ export default function ApplyPage() {
           <div className="input-wrap">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <label className="input-label">State</label>
-              <span style={{ fontSize: 11, color: "#10B981" }}>✅ Auto-filled</span>
+              <StatusTag kind="ok" />
             </div>
             <input className="input" defaultValue="Uttar Pradesh" readOnly style={{ background: "var(--surface-elevated)" }} />
           </div>
           <div className="input-wrap">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <label className="input-label">Bank Account Number</label>
-              <span style={{ fontSize: 11, color: "#EF4444" }}>❌ Fill required</span>
+              <StatusTag kind="required" />
             </div>
             <input
               className="input"
@@ -120,7 +127,7 @@ export default function ApplyPage() {
       <div className={`modal-overlay${successOpen ? " open" : ""}`}>
         <div className="modal" style={{ textAlign: "center", maxWidth: 440 }}>
           <div className="success-ring" style={{ background: "linear-gradient(135deg,#10B981,#059669)", marginBottom: 20 }}>
-            <span style={{ fontSize: 32, position: "relative", zIndex: 1 }}>✅</span>
+            <span style={{ position: "relative", zIndex: 1, color: "#fff", display: "flex" }}><CheckCircle2 size={32} strokeWidth={2} /></span>
           </div>
           <h2 style={{ fontSize: 26, fontWeight: 700, color: "#10B981", marginBottom: 8 }}>Application Submitted!</h2>
           <div style={{ fontSize: 15, color: "var(--text-secondary)", marginBottom: 20 }}>PM Scholarship Scheme for CAPF</div>

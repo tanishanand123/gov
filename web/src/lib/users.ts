@@ -76,3 +76,12 @@ export function userExists(email: string, mobile: string): boolean {
     (u) => u.email.toLowerCase() === email.toLowerCase() || u.mobile === mobile
   );
 }
+
+export function updateUserPassword(email: string, passwordHash: string): boolean {
+  const users = readUsers();
+  const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+  if (!user) return false;
+  user.passwordHash = passwordHash;
+  writeUsers(users);
+  return true;
+}

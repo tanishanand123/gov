@@ -4,15 +4,16 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { LayoutDashboard, ClipboardList, FolderArchive, FileEdit, Bell, User, Settings, Landmark, LogOut } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", icon: "🏠", label: "Dashboard" },
-  { href: "/dashboard/schemes", icon: "📋", label: "Eligible Schemes" },
-  { href: "/dashboard/vault", icon: "🗂", label: "Document Vault" },
-  { href: "/dashboard/applications", icon: "📝", label: "My Applications" },
-  { href: "/dashboard/notifications", icon: "🔔", label: "Notifications" },
-  { href: "/dashboard/profile", icon: "👤", label: "My Profile" },
-  { href: "/dashboard/settings", icon: "⚙️", label: "Settings" },
+  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/dashboard/schemes", icon: ClipboardList, label: "Eligible Schemes" },
+  { href: "/dashboard/vault", icon: FolderArchive, label: "Document Vault" },
+  { href: "/dashboard/applications", icon: FileEdit, label: "My Applications" },
+  { href: "/dashboard/notifications", icon: Bell, label: "Notifications" },
+  { href: "/dashboard/profile", icon: User, label: "My Profile" },
+  { href: "/dashboard/settings", icon: Settings, label: "Settings" },
 ];
 
 export function Sidebar({ visible }: { visible: boolean }) {
@@ -27,7 +28,7 @@ export function Sidebar({ visible }: { visible: boolean }) {
   return (
     <aside className="sidebar" style={{ display: visible ? "flex" : "none" }}>
       <div className="sidebar-logo">
-        <span style={{ fontSize: 22 }}>🏛</span>
+        <span className="sidebar-logo-icon"><Landmark size={20} strokeWidth={2} /></span>
         <div>
           <div className="sidebar-logo-text gradient-text-cyan">SmartGov</div>
           <div style={{ fontSize: 10, color: "var(--text-muted)" }}>Assist</div>
@@ -36,11 +37,14 @@ export function Sidebar({ visible }: { visible: boolean }) {
       </div>
 
       <nav className="nav-section">
-        {NAV_ITEMS.map((item) => (
-          <Link key={item.href} href={item.href} className={`nav-item${isActive(item.href) ? " active" : ""}`}>
-            <span className="nav-icon">{item.icon}</span> {item.label}
-          </Link>
-        ))}
+        {NAV_ITEMS.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link key={item.href} href={item.href} className={`nav-item${isActive(item.href) ? " active" : ""}`}>
+              <span className="nav-icon"><Icon size={18} strokeWidth={2} /></span> {item.label}
+            </Link>
+          );
+        })}
       </nav>
 
       <div className="sidebar-user">
@@ -55,9 +59,9 @@ export function Sidebar({ visible }: { visible: boolean }) {
         </div>
         <button
           onClick={() => signOut({ callbackUrl: "/" })}
-          style={{ display: "block", width: "100%", textAlign: "center", marginTop: 10, fontSize: 13, color: "#EF4444", background: "none", border: "none", fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, width: "100%", textAlign: "center", marginTop: 10, fontSize: 13, color: "#EF4444", background: "none", border: "none", fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}
         >
-          Logout
+          <LogOut size={14} strokeWidth={2} /> Logout
         </button>
       </div>
     </aside>

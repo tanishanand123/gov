@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Search } from "lucide-react";
 
 interface UserRow {
   initials: string;
@@ -30,7 +31,7 @@ export default function AdminUsersPage() {
 
       <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
         <div style={{ background: "#1E293B", border: "1px solid #334155", borderRadius: 12, display: "flex", alignItems: "center", padding: "0 14px", gap: 8, height: 44, flex: 1, maxWidth: 360 }}>
-          <span style={{ color: "#64748B" }}>🔍</span>
+          <Search size={16} strokeWidth={2} color="#64748B" />
           <input type="text" placeholder="Search users..." style={{ border: "none", background: "transparent", color: "#F1F5F9", fontSize: 14, outline: "none", flex: 1, fontFamily: "inherit" }} />
         </div>
         <select style={{ background: "#1E293B", border: "1px solid #334155", borderRadius: 12, height: 44, color: "#94A3B8", fontSize: 14, padding: "0 14px", outline: "none", fontFamily: "inherit" }}>

@@ -5,15 +5,8 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toggleTheme } from "@/lib/theme";
 import { api } from "@/lib/api";
-
-const STATES = [
-  "Uttar Pradesh", "Maharashtra", "Bihar", "West Bengal", "Madhya Pradesh",
-  "Tamil Nadu", "Rajasthan", "Karnataka", "Gujarat", "Andhra Pradesh",
-];
-
-const OCCUPATIONS = [
-  "Student", "Farmer", "Daily Wage Worker", "Salaried Employee", "Self-Employed", "Unemployed", "Other",
-];
+import { INDIA_STATES, STATE_OTHER, OCCUPATIONS } from "@/lib/constants";
+import { User, MapPin, Bell, Home as HomeIcon, Building2, Compass, Map as MapIcon, PartyPopper, Moon } from "lucide-react";
 
 const LANGUAGES = [
   { key: "Hindi", label: "🇮🇳 Hindi" },
@@ -28,9 +21,9 @@ const LANGUAGES = [
   { key: "Punjabi", label: "🌾 Punjabi" },
 ];
 
-function Pill({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
+function Pill({ label, selected, onClick }: { label: React.ReactNode; selected: boolean; onClick: () => void }) {
   return (
-    <div className={`pill-option${selected ? " selected" : ""}`} onClick={onClick}>
+    <div className={`pill-option${selected ? " selected" : ""}`} onClick={onClick} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
       {label}
     </div>
   );
@@ -62,6 +55,7 @@ export default function OnboardingPage() {
   const [gender, setGender] = useState("Male");
   const [category, setCategory] = useState("OBC");
   const [state, setState] = useState("");
+  const [customState, setCustomState] = useState("");
 
   // Step 2
   const [income, setIncome] = useState(180000);
@@ -75,6 +69,59 @@ export default function OnboardingPage() {
   const [block, setBlock] = useState("");
   const [pincode, setPincode] = useState("");
   const [areaType, setAreaType] = useState<"Rural" | "Urban">("Rural");
+  const [mapCoords, setMapCoords] = useState<{ lat: number; lon: number } | null>(null);
+  const [mapLabel, setMapLabel] = useState("");
+  const [locating, setLocating] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
+
+  const locateOnMap = async () => {
+    const effectiveState = state === STATE_OTHER ? customState : state;
+    const query = [pincode, block, district, effectiveState, "India"].filter(Boolean).join(", ");
+    if (!query || query === "India") { setMapError("Enter a district, pincode or state first"); return; }
+    setLocating(true);
+    setMapError(null);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`);
+      const results = await res.json();
+      if (results?.[0]) {
+        setMapCoords({ lat: parseFloat(results[0].lat), lon: parseFloat(results[0].lon) });
+        setMapLabel(results[0].display_name);
+      } else {
+        setMapError("Location not found — try a different pincode or district");
+      }
+    } catch {
+      setMapError("Couldn't reach the map service. Check your internet connection.");
+    } finally {
+      setLocating(false);
+    }
+  };
+
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) { setMapError("Geolocation not supported in this browser"); return; }
+    setLocating(true);
+    setMapError(null);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setMapCoords({ lat: latitude, lon: longitude });
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          const data = await res.json();
+          setMapLabel(data?.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+          const addr = data?.address || {};
+          if (addr.state && INDIA_STATES.includes(addr.state)) setState(addr.state);
+          if (addr.county || addr.state_district) setDistrict(addr.county || addr.state_district);
+          if (addr.postcode) setPincode(addr.postcode.replace(/\D/g, "").slice(0, 6));
+        } catch {
+          setMapLabel(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        } finally {
+          setLocating(false);
+        }
+      },
+      () => { setMapError("Couldn't access your location — check browser permissions"); setLocating(false); },
+      { timeout: 10000 }
+    );
+  };
 
   // Step 4
   const [languages, setLanguages] = useState<string[]>(["Hindi"]);
@@ -91,13 +138,14 @@ export default function OnboardingPage() {
     const authId = session?.user?.email;
     if (!authId) { router.push("/dashboard"); return; }
     setSaving(true);
+    const finalState = state === STATE_OTHER ? customState.trim() : state;
     try {
       await api.updateProfile(authId, {
         name,
         dob,
         gender,
         category,
-        state,
+        state: finalState,
         income: String(income),
         occupation,
         bpl: bpl ? "Yes" : "No",
@@ -158,7 +206,7 @@ export default function OnboardingPage() {
       {/* STEP 1 */}
       {step === 1 && (
         <div className="wizard-card">
-          <div className="step-icon-circle" style={{ background: "linear-gradient(135deg,#6366F1,#4338CA)" }}>👤</div>
+          <div className="step-icon-circle" style={{ background: "linear-gradient(135deg,#6366F1,#4338CA)" }}><User size={22} strokeWidth={2} color="#fff" /></div>
           <h2>Tell us about yourself</h2>
           <div className="sub">This helps us match you to the right government schemes</div>
 
@@ -191,8 +239,19 @@ export default function OnboardingPage() {
               <label className="input-label">State</label>
               <select className="input" value={state} onChange={(e) => setState(e.target.value)}>
                 <option value="">Select your state</option>
-                {STATES.map((s) => <option key={s}>{s}</option>)}
+                {INDIA_STATES.map((s) => <option key={s}>{s}</option>)}
+                <option value={STATE_OTHER}>{STATE_OTHER}</option>
               </select>
+              {state === STATE_OTHER && (
+                <input
+                  className="input"
+                  style={{ marginTop: 10 }}
+                  type="text"
+                  placeholder="Enter your state / UT name"
+                  value={customState}
+                  onChange={(e) => setCustomState(e.target.value)}
+                />
+              )}
             </div>
           </div>
 
@@ -258,7 +317,7 @@ export default function OnboardingPage() {
       {/* STEP 3 */}
       {step === 3 && (
         <div className="wizard-card">
-          <div className="step-icon-circle" style={{ background: "linear-gradient(135deg,#06B6D4,#0891B2)" }}>📍</div>
+          <div className="step-icon-circle" style={{ background: "linear-gradient(135deg,#06B6D4,#0891B2)" }}><MapPin size={22} strokeWidth={2} color="#fff" /></div>
           <h2>Location Details</h2>
           <div className="sub">State schemes vary — accurate location unlocks more eligibility</div>
 
@@ -267,8 +326,20 @@ export default function OnboardingPage() {
               <div className="input-wrap">
                 <label className="input-label">State</label>
                 <select className="input" value={state} onChange={(e) => setState(e.target.value)}>
-                  {STATES.map((s) => <option key={s}>{s}</option>)}
+                  <option value="">Select your state</option>
+                  {INDIA_STATES.map((s) => <option key={s}>{s}</option>)}
+                  <option value={STATE_OTHER}>{STATE_OTHER}</option>
                 </select>
+                {state === STATE_OTHER && (
+                  <input
+                    className="input"
+                    style={{ marginTop: 10 }}
+                    type="text"
+                    placeholder="Enter your state / UT name"
+                    value={customState}
+                    onChange={(e) => setCustomState(e.target.value)}
+                  />
+                )}
               </div>
               <div className="input-wrap">
                 <label className="input-label">District</label>
@@ -288,12 +359,40 @@ export default function OnboardingPage() {
             <div className="input-wrap">
               <label className="input-label">Area Type</label>
               <div className="pill-group">
-                <Pill label="🏘 Rural" selected={areaType === "Rural"} onClick={() => setAreaType("Rural")} />
-                <Pill label="🏙 Urban" selected={areaType === "Urban"} onClick={() => setAreaType("Urban")} />
+                <Pill label={<><HomeIcon size={14} strokeWidth={2} /> Rural</>} selected={areaType === "Rural"} onClick={() => setAreaType("Rural")} />
+                <Pill label={<><Building2 size={14} strokeWidth={2} /> Urban</>} selected={areaType === "Urban"} onClick={() => setAreaType("Urban")} />
               </div>
             </div>
-            <div style={{ borderRadius: 12, background: "var(--surface-elevated)", height: 120, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: 13, border: "1px solid var(--border)" }}>
-              🗺 Map preview — {state || "select a state"}
+            <div className="input-wrap">
+              <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+                <button type="button" className="btn btn-outline btn-sm" onClick={locateOnMap} disabled={locating}>
+                  {locating ? "Locating…" : (<><MapPin size={14} strokeWidth={2} /> Show on Map</>)}
+                </button>
+                <button type="button" className="btn btn-outline btn-sm" onClick={useCurrentLocation} disabled={locating}>
+                  {locating ? "Locating…" : (<><Compass size={14} strokeWidth={2} /> Use My Current Location</>)}
+                </button>
+              </div>
+              {mapError && (
+                <div style={{ fontSize: 12, color: "#EF4444", marginBottom: 8 }}>{mapError}</div>
+              )}
+              {mapCoords ? (
+                <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)" }}>
+                  <iframe
+                    title="Location map"
+                    width="100%"
+                    height="220"
+                    style={{ border: 0, display: "block" }}
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${mapCoords.lon - 0.05}%2C${mapCoords.lat - 0.05}%2C${mapCoords.lon + 0.05}%2C${mapCoords.lat + 0.05}&layer=mapnik&marker=${mapCoords.lat}%2C${mapCoords.lon}`}
+                  />
+                  {mapLabel && (
+                    <div style={{ padding: "8px 12px", fontSize: 12, color: "var(--text-muted)", background: "var(--surface-elevated)" }}>{mapLabel}</div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ borderRadius: 12, background: "var(--surface-elevated)", height: 120, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "var(--text-muted)", fontSize: 13, border: "1px solid var(--border)" }}>
+                  <MapIcon size={16} strokeWidth={2} /> Enter your location and tap &quot;Show on Map&quot;
+                </div>
+              )}
             </div>
           </div>
 
@@ -307,7 +406,7 @@ export default function OnboardingPage() {
       {/* STEP 4 */}
       {step === 4 && (
         <div className="wizard-card">
-          <div className="step-icon-circle" style={{ background: "linear-gradient(135deg,#EC4899,#DB2777)" }}>🔔</div>
+          <div className="step-icon-circle" style={{ background: "linear-gradient(135deg,#EC4899,#DB2777)" }}><Bell size={22} strokeWidth={2} color="#fff" /></div>
           <h2>Preferences</h2>
           <div className="sub">Personalise your experience</div>
 
@@ -334,7 +433,7 @@ export default function OnboardingPage() {
 
           <div className="nav-row" style={{ flexDirection: "column", gap: 10 }}>
             <button className="btn btn-primary btn-full" style={{ height: 52, borderRadius: 14, fontSize: 15 }} onClick={finish} disabled={saving}>
-              {saving ? "Saving…" : "Finish Setup → 🎉"}
+              {saving ? "Saving…" : (<>Finish Setup <PartyPopper size={16} strokeWidth={2} /></>)}
             </button>
             <div style={{ textAlign: "center", fontSize: 12, color: "var(--text-muted)" }}>
               Takes less than 30 seconds. You can update these anytime.
@@ -345,7 +444,7 @@ export default function OnboardingPage() {
       )}
 
       <div style={{ position: "fixed", bottom: 20, right: 20 }}>
-        <button className="btn btn-secondary" onClick={toggleTheme}>🌙</button>
+        <button className="btn btn-secondary" onClick={toggleTheme}><Moon size={16} strokeWidth={2} /></button>
       </div>
     </div>
   );

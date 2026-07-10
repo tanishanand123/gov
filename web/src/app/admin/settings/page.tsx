@@ -1,8 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
+import { Smartphone, MessageSquare, Mail, CircleDot, Megaphone, type LucideIcon } from "lucide-react";
 
-const CHANNELS = ["📱 In-App", "💬 SMS", "📧 Email", "🟢 WhatsApp"];
+const CHANNELS: { icon: LucideIcon; label: string }[] = [
+  { icon: Smartphone, label: "In-App" },
+  { icon: MessageSquare, label: "SMS" },
+  { icon: Mail, label: "Email" },
+  { icon: CircleDot, label: "WhatsApp" },
+];
 
 export default function AdminNotificationsPage() {
   const [channel, setChannel] = useState(0);
@@ -29,7 +35,9 @@ export default function AdminNotificationsPage() {
             <label className="input-label">Channel</label>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {CHANNELS.map((c, i) => (
-                <div key={c} className={`pill-option${channel === i ? " selected" : ""}`} style={{ fontSize: 13 }} onClick={() => setChannel(i)}>{c}</div>
+                <div key={c.label} className={`pill-option${channel === i ? " selected" : ""}`} style={{ fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }} onClick={() => setChannel(i)}>
+                  <c.icon size={14} strokeWidth={2} /> {c.label}
+                </div>
               ))}
             </div>
           </div>
@@ -42,7 +50,7 @@ export default function AdminNotificationsPage() {
             <textarea className="input" rows={4} style={{ background: "#0F172A", borderColor: "#334155", color: "#F1F5F9", height: "auto", resize: "vertical", paddingTop: 12 }} placeholder="Enter notification message..." />
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <button className="btn btn-primary">📢 Send Now</button>
+            <button className="btn btn-primary"><Megaphone size={14} strokeWidth={2} /> Send Now</button>
             <button className="btn btn-secondary" style={{ background: "#1E293B", color: "#818CF8", border: "1px solid #334155" }}>Schedule for Later</button>
           </div>
         </div>
